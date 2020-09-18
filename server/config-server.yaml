@@ -1,0 +1,65 @@
+MTUOCServer:
+  verbose: True
+  restore_tags: True
+  #filename or None
+  port: 8000
+  type: MTUOC
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
+  MTengine: Marian
+  #one of Marian, OpenNMT, Moses, ModernMT
+  #one of True, False
+  ONMT_url_root: "/translator"
+
+Preprocess:
+  #these are used by all engines except ModernMT
+  type: SentencePiece
+  #one of SentencePiece NMT SMT custom
+  #these are for all
+  sl_lang: en
+  tl_lang: es
+  sl_tokenizer: MTUOC_tokenizer_eng
+  tl_tokenizer: MTUOC_tokenizer_spa
+  #these are for sentencepiece
+  sp_model_SL: model-SP
+  sp_model_TL: model-SP
+  #this are for NMT and SMT
+  tcmodel: tc.en
+  #this is for NMT
+  bpecodes: codes_file
+  joiner: "@@"
+  bos_annotate: False
+  eos_annotate: False
+  #if no subwords used state None
+  
+MarianEngine:
+  ip: localhost 
+  port: 8080
+  type: GPU
+  model: model.npz
+  vocab_sl: vocab-en.yml
+  vocab_tl: vocab-es.yml
+  min_len_factor: 0.5
+
+OpenNMTEngine:
+  ip: 127.0.0.1 
+  port: 8080
+  url_root: "/translator"
+  #type: CPU/GPU: The use of GPU in OpenNMTServer is configured in the confjson file: "gpu": -1, (where -1 is NO GPU, 0, 1, 2....
+  confjson: confONMT.json
+  #model: THE MODEL IS GIVEN IN THE confONMT.json file
+  
+ModernMTEngine:
+  ip: "127.0.0.1"
+  port: 8064
+  path_to_mmt: "/home/aoliverg/recerca/MMT25/mmt"
+  #None is server started manually
+  engine: "prova-en-it"
+  sl: en
+  tl: it
+  preprocess: None
+  postprocess: None
+  
+MosesEngine:
+  ip: 127.0.01
+  port: 8080
+  ini: moses.ini
