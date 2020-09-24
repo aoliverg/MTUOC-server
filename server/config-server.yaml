@@ -6,6 +6,7 @@ MTUOCServer:
   type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   MTengine: Marian
+  startMTEngine: True
   #one of Marian, OpenNMT, Moses, ModernMT
   #one of True, False
   ONMT_url_root: "/translator"

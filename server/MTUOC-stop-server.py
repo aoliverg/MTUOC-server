@@ -25,18 +25,23 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-stream = open('config-server.yaml', 'r',encoding="utf-8")
+if len(sys.argv)==1:
+    configfile="config-server.yaml"
+else:
+    configfile=sys.argv[1]
+
+stream = open(configfile, 'r',encoding="utf-8")
 config=yaml.load(stream, Loader=yaml.FullLoader)
 
 MTUOCServer_port=config["MTUOCServer"]["port"]
 MTUOCServer_MTengine=config["MTUOCServer"]["MTengine"]
-
+startMTEngine=config["MTUOCServer"]["startMTEngine"]
 
 stopcommand1="fuser -k "+str(MTUOCServer_port)+"/tcp &"
 os.system(stopcommand1)
 print("MTUOC Server stopped.")
 
-if MTUOCServer_MTengine=="Marian":
+if MTUOCServer_MTengine=="Marian" and startMTEngine:
     try:
         MarianServer_port=config["MarianEngine"]["port"]
         stopcommand2="fuser -k "+str(MarianServer_port)+"/tcp &"
@@ -46,7 +51,7 @@ if MTUOCServer_MTengine=="Marian":
         print("Unable to stop Marian server",sys.exc_info())
         
 
-elif MTUOCServer_MTengine=="OpenNMT":
+elif MTUOCServer_MTengine=="OpenNMT" and startMTEngine:
 
     try:
         OpenNMTServer_port=config["MarianEngine"]["port"]
@@ -56,7 +61,7 @@ elif MTUOCServer_MTengine=="OpenNMT":
     except:
         print("Unable to stop OpenNMT server",sys.exc_info())
 
-elif MTUOCServer_MTengine=="ModernMT":
+elif MTUOCServer_MTengine=="ModernMT" and startMTEngine:
     try:
         ModernMTServer_port=config["ModernMTEngine"]["port"]
         ModernMTEngine_path=config["ModernMTEngine"]["path_to_mmt"]
@@ -70,7 +75,7 @@ elif MTUOCServer_MTengine=="ModernMT":
     except:
         print("Unable to stop ModernMT server",sys.exc_info())
 
-elif MTUOCServer_MTengine=="Moses":
+elif MTUOCServer_MTengine=="Moses" and startMTEngine:
     try:
         MosesServer_port=config["MosesEngine"]["port"]
         stopcommand2="fuser -k "+str(MosesServer_port)+"/tcp &"

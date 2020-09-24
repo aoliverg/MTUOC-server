@@ -68,7 +68,7 @@ def translate_segment_Marian(segment):
     try:
         #Translate tags with attributes
         tags=re.findall('(<[^>]+>)', segment)
-
+        
         equiltag={}
         cont=0
         for tag in tags:
@@ -82,7 +82,11 @@ def translate_segment_Marian(segment):
                 segment=segment.replace(ttanc,ttancmod)
                 equiltag[ttancmod]=ttanc
                 cont+=1
-        
+        #Dealing with uppercased sentences
+        toLower=False
+        if segment==segment.upper():
+            segment=segment.lower().capitalize()
+            toLower=True
                         
         if MTUOCServer_verbose:
             now=str(datetime.now())
@@ -156,6 +160,8 @@ def translate_segment_Marian(segment):
         for clau in equiltag.keys():
             selectedtranslation=selectedtranslation.replace(clau,equiltag[clau])
             
+        if toLower:
+            selectedtranslation=selectedtranslation.upper()
         if MTUOCServer_verbose:print("Translation: ",selectedtranslation)
     
     except:
@@ -196,6 +202,12 @@ def translate_segment_OpenNMT(segment):
             print("---------")
             print(now)
             print("Segment: ",segment)
+            
+        #Dealing with uppercased sentences
+        toLower=False
+        if segment==segment.upper():
+            segment=segment.lower().capitalize()
+            toLower=True
 
         segmentNOTAGS=remove_tags(segment)
         if MTUOCServer_verbose:print("Segment No Tags: ",segmentNOTAGS)
@@ -250,7 +262,9 @@ def translate_segment_OpenNMT(segment):
         
         for clau in equiltag.keys():
             selectedtranslation=selectedtranslation.replace(clau,equiltag[clau])
-            
+        if toLower:
+            selectedtranslation=selectedtranslation.upper()
+                
         if MTUOCServer_verbose:print("Translation: ",selectedtranslation)
         
         return(selectedtranslation)
@@ -292,6 +306,11 @@ def translate_segment_Moses(segment):
         equiltag={}
         cont=0
         tags=re.findall('(<[^>]+>)', segment)
+        #Dealing with uppercased sentences
+        toLower=False
+        if segment==segment.upper():
+            segment=segment.lower().capitalize()
+            toLower=True
         for tag in tags:
             if tag.find(" ")>-1:
                 tagmod="<tag"+str(cont)+">"
@@ -343,18 +362,21 @@ def translate_segment_Moses(segment):
             selectedtranslation=selectedtranslation.replace(clau,equiltag[clau])
         
         if MTUOCServer_verbose:print("Translation: ",selectedtranslation)
-        
+        if toLower:
+            selectedtranslation=selectedtranslation.upper()
         return(selectedtranslation)
-        
-        
-        
     except:
         print("ERROR",sys.exc_info())
 
 
 ####MAIN
 
-stream = open('config-server.yaml', 'r',encoding="utf-8")
+if len(sys.argv)==1:
+    configfile="config-server.yaml"
+else:
+    configfile=sys.argv[1]
+
+stream = open(configfile, 'r',encoding="utf-8")
 config=yaml.load(stream, Loader=yaml.FullLoader)
 
 
@@ -386,6 +408,7 @@ MTUOCServer_port=config["MTUOCServer"]["port"]
 MTUOCServer_type=config["MTUOCServer"]["type"]
 MTUOCServer_MTengine=config["MTUOCServer"]["MTengine"]
 MTUOCServer_verbose=config["MTUOCServer"]["verbose"]
+startMTEngine=config["MTUOCServer"]["startMTEngine"]
 
 if not MTUOCServer_MTengine=="ModernMT" and preprocess_type=="SentencePiece":
     from MTUOC_process_segment_SP import to_MT
@@ -429,7 +452,9 @@ if MTUOCServer_MTengine=="Marian":
     from websocket import create_connection
     
     from MTUOC_tags import remove_tags
-    
+
+
+
     MarianEngine_ip=config["MarianEngine"]["ip"]
     MarianEngine_port=config["MarianEngine"]["port"]
     MarianEngine_type=config["MarianEngine"]["type"]
@@ -437,11 +462,11 @@ if MTUOCServer_MTengine=="Marian":
     MarianEngine_vocab_sl=config["MarianEngine"]["vocab_sl"]
     MarianEngine_vocab_tl=config["MarianEngine"]["vocab_tl"]
     MarianEngine_min_len_factor=float(config["MarianEngine"]["min_len_factor"])
-    marianstarted=False
+    
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         conn=s.connect_ex((MarianEngine_ip, MarianEngine_port))
         if conn == 0:marianstarted=True
-    if not marianstarted:
+    if startMTEngine:
         if MarianEngine_type=="CPU":
             _thread.start_new_thread(start_MarianCPU,())
         elif MarianEngine_type=="GPU":
@@ -466,14 +491,15 @@ if MTUOCServer_MTengine=="OpenNMT":
    
     from MTUOC_tags import remove_tags
 
-    
+
     OpenNMTEngine_ip=config["OpenNMTEngine"]["ip"]
     OpenNMTEngine_port=config["OpenNMTEngine"]["port"]
     OpenNMTEngine_confjson=config["OpenNMTEngine"]["confjson"]
     #OpenNMTEngine_model=config["OpenNMTEngine"]["model"] THE MODEL IS GIVEN IN THE configONMT.json file
     OpenNMTEngine_url_root=config["OpenNMTEngine"]["url_root"]
     OpenNMTEngine_debug=True
-    _thread.start_new_thread(start_ONMT,(OpenNMTEngine_confjson,OpenNMTEngine_url_root,OpenNMTEngine_ip,OpenNMTEngine_port,OpenNMTEngine_debug))
+    if startMTEngine:
+        _thread.start_new_thread(start_ONMT,(OpenNMTEngine_confjson,OpenNMTEngine_url_root,OpenNMTEngine_ip,OpenNMTEngine_port,OpenNMTEngine_debug))
     
     url = "http://"+OpenNMTEngine_ip+":"+str(OpenNMTEngine_port)+OpenNMTEngine_url_root+"/translate"
 
@@ -491,7 +517,7 @@ def startModernMT(ModernMTEnginte_path,ModernMTEngine_engine,ModernMTEngine_port
 
 if MTUOCServer_MTengine=="ModernMT":
     import requests
-
+if MTUOCServer_MTengine=="ModernMT" and startMTEngine:
     if MTUOCServer_verbose:print("REMEMBER: ModernMT engine should be started manually")
     ModernMTEngine_ip=config["ModernMTEngine"]["ip"]
     ModernMTEngine_port=config["ModernMTEngine"]["port"]
@@ -532,12 +558,11 @@ if MTUOCServer_MTengine=="Moses":
     
     from MTUOC_tags import remove_tags
 
-    
     MosesEngine_ini=config['MosesEngine']['ini']
     MosesEngine_ip=config['MosesEngine']['ip']
     MosesEngine_port=config['MosesEngine']['port']
-    _thread.start_new_thread(start_Moses, (MosesEngine_ip,MosesEngine_port,MosesEngine_ini))
-    
+    if startMTEngine:
+        _thread.start_new_thread(start_Moses, (MosesEngine_ip,MosesEngine_port,MosesEngine_ini))
     proxyMoses = xmlrpc.client.ServerProxy("http://"+MosesEngine_ip+":"+str(MosesEngine_port)+"/RPC2")
     
    
@@ -722,6 +747,21 @@ if MTUOCServer_type=="ModernMT":
         app.run(debug=True, host=ip, port=MTUOCServer_port, use_reloader=False,
                 threaded=True)
     start()
+
+def translate(segment):
+    print("Translating: ",segment['text'])
+    if MTUOCServer_MTengine=="Marian":
+        translation=translate_segment_Marian(segment['text'])
+    elif MTUOCServer_MTengine=="OpenNMT":
+        translation=translate_segment_OpenNMT(segment['text'])
+    elif MTUOCServer_MTengine=="ModernMT":
+        translation=translate_segment_ModernMT(segment['text'])
+    elif MTUOCServer_MTengine=="Moses":
+        translation=translate_segment_Moses(segment['text'])
+    print("Translation: ",translation)
+    translationdict={}
+    translationdict["text"]=translation
+    return(translationdict)
 
 if MTUOCServer_type=="Moses":
     from xmlrpc.server import SimpleXMLRPCServer
