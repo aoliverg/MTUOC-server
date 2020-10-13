@@ -55,13 +55,13 @@ def get_IP_info():
 
 def start_MarianCPU():
     print("Starting Marian CPU")
-    startMariancommand="./marian-server-CPU -m "+MarianEngine_model+" -v "+MarianEngine_vocab_sl+" "+MarianEngine_vocab_tl+" --n-best "+"--alignment hard"+" -p "+ str(MarianEngine_port) +" &"
+    startMariancommand="./marian-server-CPU -m "+MarianEngine_model+" -v "+MarianEngine_vocab_sl+" "+MarianEngine_vocab_tl+" --n-best "+"--alignment hard"+" -p "+ str(MarianEngine_port) +" --normalize 1 &"
     os.system(startMariancommand)
 
     
 def start_MarianGPU():
     print("Starting Marian GPU")
-    startMariancommand="./marian-server-GPU -m "+MarianEngine_model+" -v "+MarianEngine_vocab_sl+" "+MarianEngine_vocab_tl+" --n-best "+"--alignment hard"+" -p "+ str(MarianEngine_port) +" &"
+    startMariancommand="./marian-server-GPU -m "+MarianEngine_model+" -v "+MarianEngine_vocab_sl+" "+MarianEngine_vocab_tl+" --n-best "+"--alignment hard"+" -p "+ str(MarianEngine_port) +" --normalize 1 &"
     os.system(startMariancommand)
 
 def translate_segment_Marian(segment):
@@ -108,6 +108,7 @@ def translate_segment_Marian(segment):
         selectedtranslation=""
         selectedalignment=""
         candidates=translations.split("\n")
+        #print("CANDIDATES:",candidates)
         translation=""
         alignments=""
         for candidate in candidates:
@@ -116,8 +117,11 @@ def translate_segment_Marian(segment):
                 translation=camps[1]
                 alignments=camps[2]
                 if cont==0:
-                    selectedtranslationPre=translation
-                    selectedalignment=alignments
+                    if not len(translation.strip())==0:
+                        selectedtranslationPre=translation
+                        selectedalignment=alignments
+                    else:
+                        cont-=1
                 ltran=len(translation)
                 if ltran>=lseg*MarianEngine_min_len_factor:
                     selectedtranslationPre=translation
