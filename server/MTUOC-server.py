@@ -66,24 +66,41 @@ def start_MarianGPU():
 
 def translate_segment_Marian(segment):
     try:
+        leading_spaces=len(segment)-len(segment.lstrip())
+        trailing_spaces=len(segment)-len(segment.rstrip())
+        existingtags=[]
         #Translate tags with attributes
         tags=re.findall('(<[^>]+>)', segment)
-        
+        existingtags.extend(tags)
         equiltag={}
         cont=0
         for tag in tags:
-            if tag.find(" ")>-1:
-                tagmod="<tag"+str(cont)+">"
-                equiltag[tagmod]=tag
-                segment=segment.replace(tag,tagmod)
-                t=tag.split(" ")[0].replace("<","")
-                ttanc="</"+t+">"
-                ttancmod="</tag"+str(cont)+">"
-                segment=segment.replace(ttanc,ttancmod)
-                equiltag[ttancmod]=ttanc
-                cont+=1
+            #if tag.find(" ")>-1:
+            tagmod="<tag"+str(cont)+">"
+            equiltag[tagmod]=tag
+            segment=segment.replace(tag,tagmod)
+            t=tag.split(" ")[0].replace("<","")
+            ttanc="</"+t+">"
+            ttancmod="</tag"+str(cont)+">"
+            segment=segment.replace(ttanc,ttancmod)
+            equiltag[ttancmod]=ttanc
+            cont+=1
+        #special tags {1} {2} ...
+        tags=re.findall('({[[0-9]+})', segment)
+        existingtags.extend(tags)
+        for tag in tags:
+            tagmod="<tag"+str(cont)+">"
+            equiltag[tagmod]=tag
+            segment=segment.replace(tag,tagmod)
+            t=tag.split(" ")[0].replace("<","")
+            ttanc="</"+t+">"
+            ttancmod="</tag"+str(cont)+">"
+            segment=segment.replace(ttanc,ttancmod)
+            equiltag[ttancmod]=ttanc
+            cont+=1
         #Dealing with uppercased sentences
         toLower=False
+        print("SEGMENT TAG MOD",segment)
         if segment==segment.upper():
             segment=segment.lower().capitalize()
             toLower=True
@@ -94,6 +111,7 @@ def translate_segment_Marian(segment):
             print(now)
             print("Segment: ",segment)
         segmentNOTAGS=remove_tags(segment)
+        print("SEGMENT NO TAGS",segmentNOTAGS)
         if MTUOCServer_verbose:print("Segment No Tags: ",segmentNOTAGS)
         if preprocess_type=="SentencePiece":
             segmentPre=to_MT(segmentNOTAGS,tokenizerA,tokenizerB)
@@ -162,12 +180,20 @@ def translate_segment_Marian(segment):
         
         
         for clau in equiltag.keys():
-            selectedtranslation=selectedtranslation.replace(clau,equiltag[clau])
-            
+            print(clau,equiltag[clau])
+            if equiltag[clau] in existingtags:
+                selectedtranslation=selectedtranslation.replace(clau,equiltag[clau])
+            else:
+                selectedtranslation=selectedtranslation.replace(clau,"")
+            print(selectedtranslation)
         if toLower:
             selectedtranslation=selectedtranslation.upper()
+            
+        #restoring leading and trailing spaces
+        lSP=leading_spaces*" "
+        tSP=trailing_spaces*" "
+        selectedtranslation=lSP+selectedtranslation.strip()+tSP
         if MTUOCServer_verbose:print("Translation: ",selectedtranslation)
-    
     except:
         print("ERROR:",sys.exc_info())
     return(selectedtranslation)
