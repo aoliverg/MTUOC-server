@@ -24,6 +24,10 @@ import importlib
 import sys
 from datetime import datetime
 import MTUOC_tags
+from MTUOC_URLs import replace_URLs as replace_URLs
+from MTUOC_URLs import restore_URLs as restore_URLs
+from MTUOC_EMAILs import replace_EMAILs as replace_EMAILs
+from MTUOC_EMAILs import restore_EMAILs as restore_EMAILs
 import re
 
 
@@ -69,6 +73,8 @@ def translate_segment_Marian(segment):
         leading_spaces=len(segment)-len(segment.lstrip())
         trailing_spaces=len(segment)-len(segment.rstrip())
         existingtags=[]
+        segment,equilURLs=replace_URLs(segment)
+        segment,equilEMAILs=replace_EMAILs(segment)
         #Translate tags with attributes
         tags=re.findall('(<[^>]+>)', segment)
         existingtags.extend(tags)
@@ -192,6 +198,8 @@ def translate_segment_Marian(segment):
         #restoring leading and trailing spaces
         lSP=leading_spaces*" "
         tSP=trailing_spaces*" "
+        selectedtranslation=restore_URLs(selectedtranslation,equilURLs)
+        selectedtranslation=restore_EMAILs(selectedtranslation,equilEMAILs)
         selectedtranslation=lSP+selectedtranslation.strip()+tSP
         if MTUOCServer_verbose:print("Translation: ",selectedtranslation)
     except:
