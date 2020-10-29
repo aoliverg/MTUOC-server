@@ -15,6 +15,8 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import re
+from random import seed
+from random import random
 
 def findURLs(string): 
     regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
@@ -27,7 +29,8 @@ def replace_URLs(string):
     equil={}
     for URL in URLs:
         cont+=1
-        cadena="www.web"+str(cont)+".com"
+        #cadena="www.web"+str(cont)+".com"
+        cadena=str(round(random()*10000000000))
         equil[cadena]=URL
         string=string.replace(URL,cadena,1)
     return(string,equil)

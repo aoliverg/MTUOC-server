@@ -15,18 +15,22 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import re
+from random import seed
+from random import random
 
 def findEMAILs(string): 
     email=re.findall('\S+@\S+', string)   
     return email
     
 def replace_EMAILs(string):
+    seed(1)
     EMAILs=findEMAILs(string)
     cont=0
     equil={}
     for EMAIL in EMAILs:
         cont+=1
-        cadena=str(cont)+"@email"+str(cont)+".com"
+        #cadena=str(cont)+"@email"+str(cont)+".com"
+        cadena=str(round(random()*10000000000))
         equil[cadena]=EMAIL
         string=string.replace(EMAIL,cadena,1)
     return(string,equil)
