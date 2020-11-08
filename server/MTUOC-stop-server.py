@@ -33,58 +33,21 @@ else:
 stream = open(configfile, 'r',encoding="utf-8")
 config=yaml.load(stream, Loader=yaml.FullLoader)
 
+MTEnginePort=config["MTEngine"]["port"]
 MTUOCServer_port=config["MTUOCServer"]["port"]
-MTUOCServer_MTengine=config["MTUOCServer"]["MTengine"]
-startMTEngine=config["MTUOCServer"]["startMTEngine"]
 
-stopcommand1="fuser -k "+str(MTUOCServer_port)+"/tcp &"
-os.system(stopcommand1)
-print("MTUOC Server stopped.")
-
-if MTUOCServer_MTengine=="Marian" and startMTEngine:
-    try:
-        MarianServer_port=config["MarianEngine"]["port"]
-        stopcommand2="fuser -k "+str(MarianServer_port)+"/tcp &"
-        os.system(stopcommand2)
-        print("Marian Server stopped.")
-    except:
-        print("Unable to stop Marian server",sys.exc_info())
-        
-
-elif MTUOCServer_MTengine=="OpenNMT" and startMTEngine:
-
-    try:
-        OpenNMTServer_port=config["MarianEngine"]["port"]
-        stopcommand2="fuser -k "+str(OpenNMTServer_port)+"/tcp &"
-        os.system(stopcommand2)
-        print("OpenNMT Server stopped.")
-    except:
-        print("Unable to stop OpenNMT server",sys.exc_info())
-
-elif MTUOCServer_MTengine=="ModernMT" and startMTEngine:
-    try:
-        ModernMTServer_port=config["ModernMTEngine"]["port"]
-        ModernMTEngine_path=config["ModernMTEngine"]["path_to_mmt"]
-        ModernMTEngine_engine=config["ModernMTEngine"]["engine"]
-        if not ModernMTEngine_path=="None":
-            stopcommand3=ModernMTEngine_path+"/mmt stop -e "+ModernMTEngine_engine+" &"
-            os.system(stopcommand3)
-        #stopcommand2="fuser -k "+str(ModernMTServer_port)+"/tcp &"
-        #os.system(stopcommand2)
-        print("ModernMT Server stopped.")
-    except:
-        print("Unable to stop ModernMT server",sys.exc_info())
-
-elif MTUOCServer_MTengine=="Moses" and startMTEngine:
-    try:
-        MosesServer_port=config["MosesEngine"]["port"]
-        stopcommand2="fuser -k "+str(MosesServer_port)+"/tcp &"
-        os.system(stopcommand2)
-        print("Moses Server stopped.")
-    except:
-        print("Unable to stop Moses server",sys.exc_info())
+try:
+    MTEnginePort=config["MTEngine"]["port"]
+    stopcommand2="fuser -k "+str(MTEnginePort)+"/tcp"
+    os.system(stopcommand2)
+    print("MT Engine stopped.")
+except:
+    print("Unable to stop MT Engine",sys.exc_info())
     
-
-
-
-
+try:
+    MTEnginePort=config["MTEngine"]["port"]
+    stopcommand2="fuser -k "+str(MTEnginePort)+"/tcp"
+    os.system(stopcommand2)
+    print("MTUOC server stopped.")
+except:
+    print("Unable to stop MTUOC server",sys.exc_info())

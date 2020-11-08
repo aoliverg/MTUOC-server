@@ -19,9 +19,11 @@ import re
 
 
 def restore(segmentTL,segmentSL):
+    print("STL",segmentTL,"SSL",segmentSL)
     trobatsEXPRNUM=re.finditer(re_num,segmentSL)
     for trobat in trobatsEXPRNUM:
         if not trobat.group(0) in [".",","]:
+            print("TROBAT",trobat)
             segmentTL=segmentTL.replace("@NUM@",trobat.group(0),1)
     return(segmentTL)
 

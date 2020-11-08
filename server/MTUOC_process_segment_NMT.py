@@ -18,7 +18,7 @@ def adapt_output(segment, joiner, bos_annotate=True, eos_annotate=True):
 
 def to_MT(segment, tokenizer, tcmodel, bpeobject, joiner="￭", bos_annotate=True, eos_annotate=True):
     segmenttok=tokenizer.tokenize(segment)
-    segmenttrue=truecaser.truecase(tcmodel,segmenttok)
+    segmenttrue=truecaser.truecase(tcmodel,tokenizer,segmenttok)
     if bpeobject:
         segmentBPE=apply_BPE(bpeobject,segmenttrue)
     else:

@@ -17,9 +17,14 @@
 import sys
 import codecs
 import pickle
+import argparse
+import importlib
 
 def load_model(model):
-    tc_model = pickle.load(open(model, "rb" ) )
+    if not model=="None":
+        tc_model = pickle.load(open(model, "rb" ) )
+    else:
+        tc_model={}
     return(tc_model)
     
 def detect_type(segment):
@@ -42,101 +47,60 @@ def detect_type(segment):
         tipus="regular"
     return(tipus)
     
-def truecase(tc_model,line):
-    tipus=detect_type(line)
-    if tipus=="regular" or tipus=="titled" or tipus=="uppercased":
-        tokens=line.split(" ")
-        nsegment=[]
-        cont=0
-        for token in tokens:
+def truecase(tc_model,tokenizer,line):
+    #tipus=detect_type(line)
+    #if tipus=="regular" or tipus=="titled" or tipus=="uppercased":
+    tokens=tokenizer.tokenize_m(line).split(" ")
+    nsegment=[]
+    cont=0
+    for token in tokens:
+        try:
+            has_joiner=False
+            if token.startswith("￭"):
+                has_joiner=True
+                token=token.replace("￭","")
             try:
-                has_joiner=False
-                if token.startswith("￭"):
-                    has_joiner=True
-                    token=token.replace("￭","")
-                if token.isalpha():
-                    cont+=1
-                if token.lower() in tc_model and "lc" in tc_model[token.lower()] and "u1" in tc_model[token.lower()]:
-                    nlc=tc_model[token.lower()]["lc"]
-                    nu1=tc_model[token.lower()]["u1"]
-                    if token in tc_model[token.lower()]:
-                        nasis=tc_model[token.lower()][token]
-                    else:
-                        nasis=0
-                else:
-                    nlc=1
-                    nu1=0
-                    nasis=1
-
-                if cont==1:
-                    #is the first token in the sentence
-                    if nasis >= nlc and nasis >= nu1:
-                        if has_joiner:
-                            nsegment.append("￭"+token)
-                        else:
-                            nsegment.append(token)
-                    elif nlc >= nu1:                    
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower())
-                        else:
-                            nsegment.append(token.lower())
-                    elif nu1 >= nlc:                    
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower().capitalize())
-                        else:
-                            nsegment.append(token.lower().capitalize())
-                    else:
-                        nsegment.append(token.lower())
-                        
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower())
-                        else:
-                            nsegment.append(token.lower())
-                else:
-                    #the rest of the tokens in the sentence
-                    if nasis >= nlc and nasis >= nu1:
-                        if has_joiner:
-                            nsegment.append("￭"+token)
-                        else:
-                            nsegment.append(token)
-                    elif nlc >= nu1:
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower())
-                        else:
-                            nsegment.append(token.lower())
-                    elif nu1 >= nasis:
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower().capitalize())
-                        else:
-                            nsegment.append(token.lower().capitalize())
-                    else:
-                        if has_joiner:
-                            nsegment.append("￭"+token.lower())
-                        else:
-                            nsegment.append(token.lower())
+                nlc=tc_model[token.lower()]["lc"]
             except:
-                nsegment.append(token)
-                    
-        return(" ".join(nsegment))
-
-
-def print_help():
-    print("MTUOC Truecaser: truecases a text using a model learnt using MTUOC_train_truecaser:")
-    print("      python3 MTUOC_truecaser..py tcmodel.xx < corpus.tok > corpus.true")
-    sys.exit()
-
+                nlc=0
+            try:
+                nu1=tc_model[token.lower()]["u1"]
+            except:
+                nu1=0
+            try:
+                nuc=tc_model[token.lower()]["uc"]
+            except:
+                nuc=0
+            
+            if nlc>0 and nlc>=nu1 and nlc>=nuc:
+                token=token.lower()
+            elif nu1>0 and nu1>nlc and nu1>nuc:
+                token=token.lower().capitalize()
+            elif nuc>0 and nuc>nlc and nuc>nu1:
+                token=token.upper()
+            if cont==1:
+                token=token.capitalize()
+            if has_joiner:
+                token="￭"+token
+            nsegment.append(token)
+        except:
+            nsegment.append(token)
+    nsegment=tokenizer.detokenize_m(" ".join(nsegment))     
+    print("TRUECASED",nsegment)       
+    return(nsegment)
 
 if __name__ == "__main__":
-    if len(sys.argv)==1:
-        print_help()
-    if len(sys.argv)>1:
-        if sys.argv[1]=="-h" or sys.argv[1]=="--help":
-            print_help()
-    model=sys.argv[1]
+    parser = argparse.ArgumentParser(description='MTUOC program for truecasing.')
+    parser.add_argument('-m','--model', action="store", dest="model", help='The truecasing model to use.',required=True)
+    parser.add_argument('-t','--tokenizer', action="store", dest="tokenizer", help='The tokenizer to used',required=False)
+    
+    args = parser.parse_args()
+    model=args.model
+    tokenizer=importlib.import_module(args.tokenizer)
     tc_model=load_model(model)
     for line in sys.stdin:
         line=line.strip()
-        tcline=truecase(tc_model,line)
+        tcline=truecase(tc_model,tokenizer,line)
         tcline=tcline[0].upper()+"".join(tcline[1:])
         print(tcline)
     
