@@ -19,7 +19,7 @@ def to_MT(segment, tokenizerA, tokenizerB, tcmodel, bos, eos):
     return(output)
 
 
-def from_MT(segment, joiner="▁",bos="None", eos="None"):
+def from_MT(segment, tokenizer, joiner="▁",bos="None", eos="None"):
     if not bos=="None":
         segment=segment.replace(bos,"")
     if not eos=="None":
@@ -28,7 +28,8 @@ def from_MT(segment, joiner="▁",bos="None", eos="None"):
     segment=segment.replace(joiner," ")
     segment=segment.strip()
     segmenttrue=detruecaser.detruecase(segment)
-    return(segmenttrue)
+    segmentdetok=tokenizer.detokenize(segmenttrue)
+    return(segmentdetok)
     
     
     
