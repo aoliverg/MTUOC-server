@@ -291,7 +291,7 @@ def translate_segment(segment):
             
             
             if preprocess_type=="SentencePiece":
-                selectedtranslation=MTUOC_process_segment_SP.from_MT(selectedtranslationRestored,sp_joiner,bos_annotate,eos_annotate)
+                selectedtranslation=MTUOC_process_segment_SP.from_MT(selectedtranslationRestored,tokenizerA,sp_joiner,bos_annotate,eos_annotate)
             elif preprocess_type=="NMT":
                     selectedtranslation=MTUOC_process_segment_NMT.from_MT(selectedtranslationRestored,detokenizer, joiner, bos_annotate, eos_annotate)
             elif preprocess_type=="SMT":
