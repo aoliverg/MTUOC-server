@@ -37,7 +37,6 @@ MTEnginePort=config["MTEngine"]["port"]
 MTUOCServer_port=config["MTUOCServer"]["port"]
 
 try:
-    MTEnginePort=config["MTEngine"]["port"]
     stopcommand2="fuser -k "+str(MTEnginePort)+"/tcp"
     os.system(stopcommand2)
     print("MT Engine stopped.")
@@ -45,8 +44,7 @@ except:
     print("Unable to stop MT Engine",sys.exc_info())
     
 try:
-    MTEnginePort=config["MTEngine"]["port"]
-    stopcommand2="fuser -k "+str(MTEnginePort)+"/tcp"
+    stopcommand2="fuser -k "+str(MTUOCServer_port)+"/tcp"
     os.system(stopcommand2)
     print("MTUOC server stopped.")
 except:
