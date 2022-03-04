@@ -1,0 +1,13 @@
+subword_nmt
+requests
+XlsxWriter
+xmltodict
+lxml
+Flask
+nltk
+sentencepiece
+numpy
+dicttoxml
+PyYAML
+SimpleWebSocketServer
+websocket_client
