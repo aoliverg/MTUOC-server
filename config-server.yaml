@@ -1,0 +1,89 @@
+MTEngine:
+    MTengine: Marian
+    #one of Marian, OpenNMT, Moses
+    startMTEngine: True
+    startCommand: "./marian-server -m model.npz model.npz.best-bleu-detok.npz model.npz.best-cross-entropy.npz --weights 0.4 0.3 0.3 -v vocab-es.yml vocab-ca.yml -p 8085 --n-best --alignment hard  --normalize 1 --quiet &"
+    #startCommand: "onmt_server --ip localhost --port 8085 --url_root /translator --config config.json"
+    #startCommand: "./moses -f moses.ini --server --server-port 8085 --print-alignment-info&"
+    #add --quiet if you don't want to see log from Marian
+    IP: localhost
+    port: 8085
+    #The port is needed for MTUOC-stop-server.py
+    min_len_factor: 0.5
+    #for Marian to avoid very short translations
+    
+MTUOCServer:
+  port: 8005
+  type: MTUOC
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard, Lucy, OpusMT
+  verbosity_level: 3
+  log_file: None
+  #log file path and name or None
+  #0: no verbosity; higher more detailed
+  restore_tags: True
+  restore_strategy: mtengine
+  #one of mtengine, eflomal, simalign
+  alimodel: None
+  #model prefix or None
+  strictTagRestoration: True
+  #if true, verifies that all tags are in the target, otherwise returns translation without tags
+  restore_case: False
+  URLs: True
+  EMAILs: True
+  replaceNUMs: False
+  splitNUMs: True
+  add_trailing_space: True
+  unescape_html: True
+  ONMT_url_root: "/translator"
+  #specific configuration when acting as ONMT server
+
+Preprocess:
+  sl_lang: en
+  tl_lang: es
+  sl_tokenizer: None
+  #or None if tokenizer not used
+  tl_tokenizer: None
+  #or None if tokenizer not used
+  #Truecasing
+  tcmodel: None
+  #or None if not used
+  ###SentencePiece###
+  sentencepiece: True
+  sp_model_SL: spmodel.model
+  sp_vocabulary_SL: vocab_file.es
+  sp_splitter: "▁"
+  
+  #BPE subword-nmt
+  BPE: False
+  #True or False: if sentencepiece is set to True, sentencepiece will be used
+  bpecodes: codes_file
+  bpe_joiner: "@@"
+
+  
+  #or None if not used
+  ###################
+  bos_annotate: <s>
+  #None or <s> (or other)
+  eos_annotate: </s>
+  #None or </s> (or other)
+
+  finaldetokenization: True
+  #one of True False
+
+#hmtl entities
+
+unescape_html_input: True
+escape_html_input: False
+
+unescape_html_output: True
+escape_html_output: False
+
+change_input_files: None
+change_output_files: None
+change_translation_files: None 
+# None or list of files separated by ; error_correction.txt;translated_names.txt
+
+#Lucy server options
+Lucy:
+    TRANSLATION_DIRECTION: ENGLISH-SPANISH
+    USER: traductor
