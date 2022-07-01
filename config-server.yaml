@@ -1,0 +1,94 @@
+MTEngine:
+    MTengine: Marian
+    #one of Marian, OpenNMT, Moses
+    startMTEngine: True
+    #startCommand: "./marian-server -m model.npz -v vocab-en.yml vocab-es.yml -p 8085 --n-best --alignment hard  --normalize 1 --quiet &"
+    startCommand: "./marian-server-GPU -m model.bin -v vocab-ca.yml vocab-es.yml -p 8080 --n-best --alignment hard  --normalize 1 --quiet &"
+    #startCommand: "onmt_server --ip localhost --port 8085 --url_root /translator --config config.json"
+    #startCommand: "./moses -f moses.ini --server --server-port 8085 --print-alignment-info&"
+    #add --quiet if you don't want to see log from Marian
+    IP: localhost
+    port: 8080
+    #The port is needed for MTUOC-stop-server.py
+    min_len_factor: 0.5
+    #for Marian to avoid very short translations
+    
+MTUOCServer:
+  port: 8000
+  type: Moses
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard, Lucy, OpusMT
+  verbosity_level: 3
+  log_file: None
+  #log file path and name or None
+  #0: no verbosity; higher more detailed
+  restore_tags: True
+  strictTagRestoration: True
+  #if true, verifies that all tags are in the target, otherwise returns translation without tags
+  restore_case: True
+  URLs: True
+  EMAILs: True
+  replaceNUMs: False
+  splitNUMs: False
+  add_trailing_space: True
+  unescape_html: True
+  max_chars_segment: 300
+  segment_splitters: 
+    - ";"
+    - ":"
+    - ","
+    - and
+    - or
+  ONMT_url_root: "/translator"
+  #specific configuration when acting as ONMT server
+
+Preprocess:
+  sl_lang: ca
+  tl_lang: es
+  sl_tokenizer: MTUOC_tokenizer_cat
+  #None if no tokenization for source language
+  tl_tokenizer: None
+  #None if no tokenization for target language
+  #Truecasing
+  tcmodel: tc.ca
+  #or None if not used
+  truecase: upper
+  #one of none, all, upper
+  ###SentencePiece###
+  sentencepiece: True
+  sp_model_SL: spmodel.model
+  sp_splitter: "▁"
+  
+  #BPE subword-nmt
+  BPE: False
+  #True or False: if sentencepiece is set to True, sentencepiece will be used
+  bpecodes: codes_file
+  bpe_joiner: "@@"
+
+  
+  #or None if not used
+  ###################
+  bos_annotate: <s>
+  #None or <s> (or other)
+  eos_annotate: </s>
+  #None or </s> (or other)
+
+  finaldetokenization: True
+  #one of True False
+
+#hmtl entities
+
+unescape_html_input: True
+escape_html_input: False
+
+unescape_html_output: True
+escape_html_output: False
+
+change_input_files: None
+change_output_files: None
+change_translation_files: None 
+# None or list of files separated by ; error_correction.txt;translated_names.txt
+
+#Lucy server options
+Lucy:
+    TRANSLATION_DIRECTION: ENGLISH-SPANISH
+    USER: traductor
