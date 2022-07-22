@@ -18,8 +18,9 @@ MTUOCServer:
   port: 8000
   type: Moses
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard, Lucy, OpusMT
-  verbosity_level: 3
-  log_file: None
+  verbosity_level: 1
+  #level 1: start, stop, errors; level 2: level 1 and source and translated segments; level 3: levels 1 and 2 and details on translation
+  log_file: log.log
   #log file path and name or None
   #0: no verbosity; higher more detailed
   restore_tags: True
