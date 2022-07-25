@@ -1,1 +1,1 @@
-sudo docker image rm --force incytaep-transformer-20220606-cat-spa
+sudo docker image rm --force name_of_the_engine
