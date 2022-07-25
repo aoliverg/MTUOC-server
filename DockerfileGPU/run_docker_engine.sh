@@ -1,4 +1,4 @@
-sudo docker run -p 8015:8000 --gpus all incyta-ep-transformer-20220530-spa-cat ./start
+sudo docker run -p 8015:8000 --gpus all name_of_the_engine ./start
 
 #-p
 # 1. computer port to use
