@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2022  Antoni Oliver
-#    v. 27/08/2022
+#    v. 7/09/2022
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -517,7 +517,7 @@ def translate_segment_part(segment,ucfirst=True):
         
     except:
         printLOG(1,"ERROR 001:",sys.exc_info())
-        translation=segment
+        translation="#!#TRANSLATION ERROR#!#:"+str(sys.exc_info()[0])
     if not change_output_files[0]=="None":
         for change in changes_output:
             tofind=change[0]
@@ -529,10 +529,11 @@ def translate_segment_part(segment,ucfirst=True):
     printLOG(2,"------------------------------------------")
     return(translation)  
 
+
 #YAML
 
 parser = argparse.ArgumentParser(description='MTUOC-server. With no arguments the config-server.yaml file will be used.')
-parser.add_argument('-c','--config', action="store", dest="config", help='The tokenizer to be used.',required=False)
+parser.add_argument('-c','--config', action="store", dest="config", help='The server configuration file to be used.',required=False)
 parser.add_argument('-p','--port', action="store", dest="port", type=int, help='The MTUOC server port.',required=False)
 parser.add_argument('-t','--type', action="store", dest="type", help='The MTUOC server type.',required=False)
 
@@ -552,6 +553,7 @@ startMTEngineCommand=config["MTEngine"]["startCommand"]
 MTEngineIP=config["MTEngine"]["IP"]
 MTEnginePort=config["MTEngine"]["port"]
 min_len_factor=config["MTEngine"]["min_len_factor"]
+
 
 
     
@@ -701,6 +703,9 @@ elif MTUOCServer_MTengine=="OpenNMT":
 elif MTUOCServer_MTengine=="Moses":
     proxyMoses = xmlrpc.client.ServerProxy("http://"+MTEngineIP+":"+str(MTEnginePort)+"/RPC2")
 
+
+    
+
 if MTUOCServer_type=="MTUOC":
     from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
     class MTUOC_server(WebSocket):
@@ -718,6 +723,7 @@ if MTUOCServer_type=="MTUOC":
     cadena="MTUOC server IP: "+str(ip)+" port: "+str(MTUOCServer_port)
     printLOG(1,cadena)
     server.serveforever()
+    
 
 elif MTUOCServer_type=="OpenNMT":
     from flask import Flask, jsonify, request
