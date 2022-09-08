@@ -477,7 +477,7 @@ def translate_segment_part(segment,ucfirst=True):
             
             if sentencepiece:
                 translationTAGS=sp.decode(translationTAGS.split())
-            if not tokenizerTL==None:
+            if not tokenizerTL==None and not tokenize==None:
                 translationTAGS=tokenizerSL.detokenize(translationTAGS)
             #Leading and trailing tags
             if tagInici:
@@ -492,10 +492,13 @@ def translate_segment_part(segment,ucfirst=True):
             printLOG(3,"Translation Restored Real Tags:",translationTAGS)
             translation=tagrestorer.repairSpacesTags(segment,translationTAGS)
         else:
-            if not tokenizerTL==None:
-                translation=tokenizerSL.detokenize(translationTAGS)
             if sentencepiece:
                 translation=sp.decode(translationTAGS.split())
+            if not tokenizerTL==None:
+                translation=tokenizerTL.detokenize(translation)
+            elif not tokenizerSL==None:
+                translation=tokenizerSL.detokenize(translation)
+            
         
         if MTUOCServer_NUMs:
             translation=restore_NUMs(segmentORI,translation)

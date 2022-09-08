@@ -175,7 +175,7 @@ def startMTUOCserver(MTUOCserver_binary,MTUOCserverconfig):
     commandStart="./"+MTUOCserver_binary+" -c "+MTUOCserverconfig+" &"
     os.system(commandStart)
     
-def stopMarianserver(Mariansever_binary):
+def stopMarianserver(Marianserver_binary):
     os.system("pkill marian-server-C")
     
 def stopMTUOCserver(MTUOCserver_binary):
@@ -234,7 +234,7 @@ while 1:
         print(translation)
         if translation.startswith("#!#TRANSLATION ERROR#!#:"):
             disconnect(type)
-            stopMarianserver(Mariansever_binary)
+            stopMarianserver(Marianserver_binary)
             stopMTUOCserver(MTUOCserver_binary)
             startMTUOCserver(MTUOCserver_binary,configfile)
             time.sleep(timeTest)
