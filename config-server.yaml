@@ -3,7 +3,7 @@ MTEngine:
     #one of Marian, OpenNMT, Moses
     startMTEngine: True
     #startCommand: "./marian-server -m model.npz -v vocab-en.yml vocab-es.yml -p 8085 --n-best --alignment hard  --normalize 1 --quiet &"
-    startCommand: "./marian-server-CPU -m model.bin -v vocab-es.yml vocab-ca.yml -p 8050 --n-best --alignment hard  --normalize 1 --quiet &"
+    startCommand: "./marian-server-CPU -m model.bin -v vocab-en.yml vocab-es.yml -p 8050 --n-best --alignment hard  --normalize 1 --quiet &"
     #startCommand: "./marian-server-GPU --models model.bin model.bin.best-cross-entropy.bin model.bin model.bin.best-bleu-detok.bin --weights 0.4 0.3 0.3 --vocabs vocab-es.yml vocab-ca.yml -p 8090 --n-best --alignment hard  --normalize 1 --quiet &"
     #startCommand: "onmt_server --ip localhost --port 8085 --url_root /translator --config config.json"
     #startCommand: "./moses -f moses.ini --server --server-port 8085 --print-alignment-info&"
@@ -16,14 +16,15 @@ MTEngine:
     
 MTUOCServer:
   port: 8000
-  type: Moses
-  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
-  verbosity_level: 1
+  type: MTUOC2
+  #one of MTUOC, MTUOC2, Moses, ModernMT, OpenNMT, NMTWizard
+  verbosity_level: 3
   #level 1: start, stop, errors; level 2: level 1 and source and translated segments; level 3: levels 1 and 2 and details on translation
   log_file: log.log
   #log file path and name or None
   #0: no verbosity; higher more detailed
   restore_tags: True
+  fix_xml: True
   strictTagRestoration: True
   #if true, verifies that all tags are in the target, otherwise returns translation without tags
   restore_case: True
@@ -48,23 +49,23 @@ MTUOCServer:
 Watchdog:
   #these parameters are for MTUOC-watchdog
   MTUOCserverconfig: config-server.yaml
-  segment: Este es un segmento de prueba.
-  time: 10
+  segment: This is a test segment.
+  time: 300
   MTUOCserver_binary: start
   Marianserver_binary: marian-server-C
   
 
 Preprocess:
-  sl_lang: es
-  tl_lang: ca
-  sl_tokenizer: None
+  sl_lang: en
+  tl_lang: es
+  sl_tokenizer: MTUOC_tokenizer_eng.py
   #None if no tokenization for source language
-  tl_tokenizer: None
+  tl_tokenizer: MTUOC_tokenizer_spa.py
   #None if no tokenization for target language
   #Truecasing
-  tcmodel: None
+  tcmodel: tc.en
   #or None if not used
-  truecase: None
+  truecase: upper
   #one of None, all, upper
   ###SentencePiece###
   sentencepiece: True

@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import re
 from collections import Counter
+from bs4 import BeautifulSoup
 
 
 def lreplace(pattern, sub, string):
@@ -385,6 +386,20 @@ class TagRestorer():
         
         TARGETTAGS=" ".join(TARGETTAGS)        
         return(TARGETTAGS)
+        
+    def fix_xml_tags(self,myxml):
+        if self.has_tags(myxml):
+            myxml2="<fix_xml>"+myxml+"</fix_xml>"
+            soup = BeautifulSoup(myxml2,'xml')
+            fixed=str(soup).replace("<fix_xml>","").replace("</fix_xml>","")
+            tags=self.get_tags(fixed)
+            for tag in tags:
+                tag2=tag.replace('"',"'")
+                if myxml.find(tag)==-1 and myxml.find(tag2)==-1:
+                    fixed=fixed.replace(tag,"")
+        else:
+            fixed=myxml
+        return(fixed)
                 
                 
             

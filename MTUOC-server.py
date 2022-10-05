@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2022  Antoni Oliver
-#    v. 7/09/2022
+#    v. 4/10/2022
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -312,6 +312,9 @@ def verify_length(llista,maxlength):
     return(correct)
 
 def translate_segment(segment):
+    #leading and trailing spaces
+    leading_spaces=len(segment)-len(segment.lstrip())
+    trailing_spaces=len(segment)-len(segment.rstrip())-1
     segmentOrig=segment
     if len(segment)>max_chars_segment:
         segmentL=[segment]
@@ -344,13 +347,17 @@ def translate_segment(segment):
         translation=segment
     else:
         translation=translate_segment_part(segment)
-        
+    if fix_xml:
+        translation=tagrestorer.fix_xml_tags(translation)
     #change translation
     for ct in changes_translation:
         if segmentOrig.find(ct[0])>-1 and translation.find(ct[1])>-1:
             #regexp="\\b"+ct[1]+"\\b"
             translation=translation.replace(ct[1],ct[2])
             #translation=re.sub(regexp, ct[2], translation)
+            
+    translation=translation.strip()
+    translation=leading_spaces*" "+translation+" "*trailing_spaces
         
     return(translation)
 
@@ -477,7 +484,7 @@ def translate_segment_part(segment,ucfirst=True):
             
             if sentencepiece:
                 translationTAGS=sp.decode(translationTAGS.split())
-            if not tokenizerTL==None and not tokenize==None:
+            if not tokenizerTL==None and not tokenizerSL==None:
                 translationTAGS=tokenizerSL.detokenize(translationTAGS)
             #Leading and trailing tags
             if tagInici:
@@ -528,6 +535,8 @@ def translate_segment_part(segment,ucfirst=True):
             if translation.find(tofind)>-1:
                 regexp="\\b"+tofind+"\\b"
                 translation=re.sub(regexp, tochange, translation)
+    translation=translation.strip()
+    translation=leading_spaces*" "+translation+" "*trailing_spaces
     printLOG(2,"Translation:",translation)
     printLOG(2,"------------------------------------------")
     return(translation)  
@@ -570,6 +579,7 @@ else:
     sortidalog=codecs.open(log_file,"a",encoding="utf-8")
     log_file=True
 MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
+fix_xml=config["MTUOCServer"]["fix_xml"]
 strictTagRestoration=config["MTUOCServer"]["strictTagRestoration"]
 MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
 
@@ -727,6 +737,50 @@ if MTUOCServer_type=="MTUOC":
     printLOG(1,cadena)
     server.serveforever()
     
+elif MTUOCServer_type=="MTUOC2":
+    from flask import Flask, jsonify, request
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
+    STATUS_OK = "ok"
+    STATUS_ERROR = "error"
+    printLOG(1,"MTUOC server started as MTUOC2 server")
+    STATUS_ERROR = "error"
+    out={}
+    def start(url_root="./translator",
+              host="0.0.0.0",
+              port=5000,
+              debug=True):
+        def prefix_route(route_function, prefix='', mask='{0}{1}'):
+            def newroute(route, *args, **kwargs):
+                return route_function(mask.format(prefix, route), *args, **kwargs)
+            return newroute
+
+        app = Flask(__name__)
+        app.route = prefix_route(app.route, url_root)
+
+        @app.route('/translate', methods=['POST'])
+        def translateMTUOC2():
+            try:
+                body = request.get_json()
+                ts=translate_segment(body["src"])
+                jsonObject = {
+                    "id": body["id"],
+                    "src": body["src"],
+                    
+                    "tgt": ts # Call MTUOC
+                }
+                print("****",jsonObject)
+                return jsonify(jsonObject)
+            except:
+                return make_response("Server Error", 500)
+            
+        app.run(debug=debug, host=host, port=port, use_reloader=False,
+            threaded=True)
+    url_root="/"
+    ip="0.0.0.0"
+    ip=get_IP_info()
+    debug="store_true"
+    start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
 
 elif MTUOCServer_type=="OpenNMT":
     from flask import Flask, jsonify, request
