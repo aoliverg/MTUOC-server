@@ -88,7 +88,7 @@ class TagRestorer():
         segmentnotags=" ".join(segmentnotags.split())
         return(segmentnotags)
         
-    def restore_tags(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK):
+    def restore_tags_old(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK):
         TARGETTAGLIST=TARGETNOTAGSTOK.split(" ")
         ali={}
         for a in SELECTEDALIGNMENT.split():
@@ -115,7 +115,6 @@ class TagRestorer():
                     TARGETTAGLIST.insert(cont,token)
                     acumulat+=1
             cont+=1
-            
         targettags=" ".join(TARGETTAGLIST)
         return(targettags) 
             
@@ -291,7 +290,10 @@ class TagRestorer():
 
     def closest_value(self,input_list, input_value):
         difference = lambda input_list : abs(input_list - input_value)
-        res = min(input_list, key=difference)
+        try:
+            res = min(input_list, key=difference)
+        except:
+            res=""
         return res                             
         
     def restore_tags(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK):
@@ -310,7 +312,6 @@ class TagRestorer():
             if a1<nmin: nmin=a1
             if a2>mmax: mmax=a2
             if a2<mmin: mmin=a2
-            
         #chek is all alignments exists
         nonexisting=[]
         for i in range(nmin,nmax):
@@ -328,7 +329,6 @@ class TagRestorer():
         for ne in nonexisting:
             closest=self.closest_value(inv_nonexisting,ne)
             ali[ne]=closest
-            
         SOURCENOTAGSTOKNUM=self.numerate(SOURCENOTAGSTOK)
         SOURCETAGSTOKNUM=self.numerate(SOURCETAGSTOK)
         TARGETNOTAGSTOKNUM=self.numerate(TARGETNOTAGSTOK)
@@ -389,14 +389,21 @@ class TagRestorer():
         
     def fix_xml_tags(self,myxml):
         if self.has_tags(myxml):
+            tagsPRE=self.get_tags(myxml)
             myxml2="<fix_xml>"+myxml+"</fix_xml>"
             soup = BeautifulSoup(myxml2,'xml')
             fixed=str(soup).replace("<fix_xml>","").replace("</fix_xml>","")
             tags=self.get_tags(fixed)
+            for TP in tagsPRE:
+                if not TP in tags:
+                    return(myxml)
             for tag in tags:
                 tag2=tag.replace('"',"'")
                 if myxml.find(tag)==-1 and myxml.find(tag2)==-1:
                     fixed=fixed.replace(tag,"")
+            
+            if not self.remove_tags(myxml)==self.remove_tags(fixed):
+                fixed=myxml
         else:
             fixed=myxml
         return(fixed)

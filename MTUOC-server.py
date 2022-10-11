@@ -395,6 +395,7 @@ def translate_segment_part(segment,ucfirst=True):
             segmentTAGS=segment
             equilG={}
             (segmentTAGS,equil)=tagrestorer.replace_tags(segmentTAGS)
+            
             (segmentTAGS,tagInici,tagFinal)=tagrestorer.remove_start_end_tag(segmentTAGS)
             segmentNOTAGS=tagrestorer.remove_tags(segment)
         else:
@@ -428,10 +429,9 @@ def translate_segment_part(segment,ucfirst=True):
             segmentTAGS=replace_URLs(segmentTAGS)
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
         
-    
+
         for tag in equil:
             segmentTAGS=segmentTAGS.replace(tag," "+tag+" ")
-            
         totruecase=False
         toupperfinal=False
         if not truecase==None and truecase=="all": totruecase=True
@@ -470,6 +470,8 @@ def translate_segment_part(segment,ucfirst=True):
         printLOG(3,"translationNOTAGSTOK:",translationNOTAGSTOK)
         printLOG(3,"alignment:",alignment)
         
+        #####L'ERROR ESTÀ A PARTIR D'AQUI
+        
         if hastags and MTUOCServer_restore_tags:
             translationTAGS=tagrestorer.restore_tags(segmentNOTAGSTOK, segmentTAGSTOK, alignment, translationNOTAGSTOK)
         else:
@@ -479,7 +481,6 @@ def translate_segment_part(segment,ucfirst=True):
         if not bos_annotate=="" and translationTAGS.startswith(bos_annotate+" "):translationTAGS=translationTAGS.replace(bos_annotate+" ","").strip()
         if not eos_annotate=="" and translationTAGS.endswith(" "+eos_annotate):translationTAGS=translationTAGS.replace(" "+eos_annotate,"").strip()
         printLOG(3,"SELECTED TRANSLATION SIMPLE TAGS",translationTAGS)
-        
         if hastags:
             
             if sentencepiece:
@@ -505,8 +506,6 @@ def translate_segment_part(segment,ucfirst=True):
                 translation=tokenizerTL.detokenize(translation)
             elif not tokenizerSL==None:
                 translation=tokenizerSL.detokenize(translation)
-            
-        
         if MTUOCServer_NUMs:
             translation=restore_NUMs(segmentORI,translation)
         if MTUOCServer_EMAILs:
@@ -738,7 +737,7 @@ if MTUOCServer_type=="MTUOC":
     server.serveforever()
     
 elif MTUOCServer_type=="MTUOC2":
-    from flask import Flask, jsonify, request
+    from flask import Flask, jsonify, request, make_response
     cli = sys.modules['flask.cli']
     cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
@@ -769,7 +768,6 @@ elif MTUOCServer_type=="MTUOC2":
                     
                     "tgt": ts # Call MTUOC
                 }
-                print("****",jsonObject)
                 return jsonify(jsonObject)
             except:
                 return make_response("Server Error", 500)
