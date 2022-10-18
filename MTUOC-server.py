@@ -435,7 +435,7 @@ def translate_segment_part(segment,ucfirst=True):
         totruecase=False
         toupperfinal=False
         if not truecase==None and truecase=="all": totruecase=True
-        if not truecase==None and truecase=="upper" and segmentNOTAGS.isupper(): 
+        if not truecase==None and truecase=="upper" and segmentNOTAGS.isupper() and not segmentNOTAGS=="@URL@" and not segmentNOTAGS=="@EMAIL@": 
             totruecase=True
             toupperfinal=True
                 
