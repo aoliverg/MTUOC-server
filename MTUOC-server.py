@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2022  Antoni Oliver
-#    v. 4/10/2022
+#    v. 2/12/2022
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -470,10 +470,11 @@ def translate_segment_part(segment,ucfirst=True):
         printLOG(3,"translationNOTAGSTOK:",translationNOTAGSTOK)
         printLOG(3,"alignment:",alignment)
         
-        #####L'ERROR ESTÀ A PARTIR D'AQUI
-        
         if hastags and MTUOCServer_restore_tags:
-            translationTAGS=tagrestorer.restore_tags(segmentNOTAGSTOK, segmentTAGSTOK, alignment, translationNOTAGSTOK)
+            try:
+                translationTAGS=tagrestorer.restore_tags(segmentNOTAGSTOK, segmentTAGSTOK, alignment, translationNOTAGSTOK)
+            except:
+                translationTAGS=translationNOTAGSTOK
         else:
             translationTAGS=translationNOTAGSTOK
         printLOG(3,"translationTAGS:",translationTAGS)
@@ -717,7 +718,7 @@ elif MTUOCServer_MTengine=="Moses":
 
 
     
-'''OLD PROTOCOL MTUOC
+
 if MTUOCServer_type=="MTUOC":
     from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
     class MTUOC_server(WebSocket):
@@ -735,14 +736,14 @@ if MTUOCServer_type=="MTUOC":
     cadena="MTUOC server IP: "+str(ip)+" port: "+str(MTUOCServer_port)
     printLOG(1,cadena)
     server.serveforever()
-'''
-if MTUOCServer_type=="MTUOC":
+    
+elif MTUOCServer_type=="MTUOC2":
     from flask import Flask, jsonify, request, make_response
     cli = sys.modules['flask.cli']
     cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
     STATUS_ERROR = "error"
-    printLOG(1,"MTUOC server started as MTUOC server")
+    printLOG(1,"MTUOC server started as MTUOC2 server")
     STATUS_ERROR = "error"
     out={}
     def start(url_root="./translator",
@@ -758,7 +759,7 @@ if MTUOCServer_type=="MTUOC":
         app.route = prefix_route(app.route, url_root)
 
         @app.route('/translate', methods=['POST'])
-        def translateMTUOC():
+        def translateMTUOC2():
             try:
                 body = request.get_json()
                 ts=translate_segment(body["src"])

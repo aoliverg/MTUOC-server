@@ -1,6 +1,6 @@
 #    MTUOC_tags
 #    Copyright (C) 2022  Antoni Oliver
-#    v. 20/05/2022
+#    v. 2/12/2022
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -194,10 +194,17 @@ class TagRestorer():
                     indexes.append(index)
                 except:
                     pass
-        return(min(indexes),max(indexes))
+        if len(indexes)==0:
+            min_value=0
+            max_value=0
+        else:
+            min_value=min(indexes)
+            max_value=max(indexes)
+        return(min_value,max_value)
         
     def insert_open_close(self, TARGETTAGSTOKNUM,opentag,closetag,minpos,maxpos):
         position=0
+        num=-1
         opendone=False
         closedone=False
         for token in TARGETTAGSTOKNUM:
@@ -218,6 +225,7 @@ class TagRestorer():
     
     def insert_before(self, segment,insertposition,opentag):
         position=0
+        num=-1
         for token in segment:
             if token.find("▂")>-1:
                 parts=token.split("▂")
@@ -233,6 +241,7 @@ class TagRestorer():
         
     def insert_after(self, segment,insertposition,opentag):
         position=0
+        num=-1
         for token in segment:
             if token.find("▂")>-1:
                 parts=token.split("▂")
@@ -250,6 +259,7 @@ class TagRestorer():
     def insert_opentag(self, TARGETTAGSTOKNUM, position, opentag):
         alreadydone=[]
         position2=0
+        num=-1
         for token in TARGETTAGSTOKNUM:
             if token.find("▂")>-1:
                 parts=token.split("▂")
@@ -268,6 +278,7 @@ class TagRestorer():
     def insert_closingtag(self, TARGETTAGSTOKNUM, position, closingtag):
         alreadydone=[]
         position2=0
+        num=-1
         for token in TARGETTAGSTOKNUM:
             if token.find("▂")>-1:
                 parts=token.split("▂")
@@ -347,6 +358,7 @@ class TagRestorer():
                 postrad.append(ali[maxpos])
                 minpostrad=min(postrad)
                 maxpostrad=max(postrad)
+                print(minpostrad,maxpostrad)
                 TARGETTAGSTOKNUM=self.insert_open_close(TARGETTAGSTOKNUM,opentag,closetag,minpostrad,maxpostrad)
                 taglist.remove(opentag)
                 taglist.remove(closetag)
