@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
-#    Copyright (C) 2022  Antoni Oliver
-#    v. 2/12/2022
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 10/01/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -46,6 +46,7 @@ import regex as rx
 
 import string as stringmodule
 
+import requests
 
 ###YAML IMPORTS
 import yaml
@@ -54,6 +55,17 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
+    
+###GoogleTranslate imports
+from google.cloud import translate as translateGoogle
+from google.cloud import translate
+
+###DeepL imports
+import deepl
+
+###Lucy imports
+import ast
+import xmltodict
 
 def is_first_letter_upper(segment):
     for character in segment:
@@ -206,6 +218,27 @@ def connect_to_Marian():
             time.sleep(2)
             error=True
     return(ws)
+    
+def connect_to_Moses():
+    import xmlrpc.client
+    error=True
+    while error:
+        try:
+            proxyMoses = xmlrpc.client.ServerProxy("http://"+MTEngineIP+":"+str(MTEnginePort)+"/RPC2")
+            error=False
+            printLOG(1,"Connection with Moses Server created","")
+        except:
+            printLOG(1,"Error: waiting for Moses server to start. Retrying in 2 seconds.","")
+            time.sleep(2)
+            error=True
+    return(proxyMoses)
+    
+def connect_to_OpenNMT():
+    import requests
+    url = "http://"+MTEngineIP+":"+str(MTEnginePort)+"/translator/translate"
+    headers = {'content-type': 'application/json'}
+    return(url,headers)
+    
 
 def translate_segment_Marian(segmentPre):
     
@@ -264,6 +297,15 @@ def translateAliMoses(aliBRUT):
 
     return(newali)
 
+def is_translatable(tokens):
+    tokens=tokens.split(" ")
+    translatable=False
+    for token in tokens:
+        if token.isalpha():
+            translatable=True
+            break
+    return(translatable)  
+
 def translate_segment_Moses(segmentPre):
     param = {"text": segmentPre}
     result = proxyMoses.translate(param)
@@ -316,48 +358,54 @@ def translate_segment(segment):
     leading_spaces=len(segment)-len(segment.lstrip())
     trailing_spaces=len(segment)-len(segment.rstrip())-1
     segmentOrig=segment
-    if len(segment)>max_chars_segment:
-        segmentL=[segment]
-        for sp in segment_splitters:
-            newsegmentL=[]
-            for element in segmentL:
-                if len(element)>max_chars_segment and element.find(sp)>-1:
-                    elementSplitted=element.split(sp)
-                    numelem=len(elementSplitted)
-                    contelem=1
-                    for eS in elementSplitted:
-                        if contelem<numelem:
-                            newsegmentL.append(eS+sp)
-                        else:
-                            newsegmentL.append(eS)
-                        contelem+=1
-                else:
-                    newsegmentL.append(element)
-            
-            segmentL=newsegmentL
-            correctparts=verify_length(segmentL,max_chars_segment)
-            if correctparts:
-                break
-        translationL=[]
-        for segment in segmentL:
-            translation=translate_segment_part(segment,ucfirst=False)
-            translationL.append(translation)
-        translation=" ".join(translationL)
-    elif len(tagrestorer.remove_tags(segment).strip())==0:
-        translation=segment
-    else:
-        translation=translate_segment_part(segment)
-    if fix_xml:
-        translation=tagrestorer.fix_xml_tags(translation)
-    #change translation
-    for ct in changes_translation:
-        if segmentOrig.find(ct[0])>-1 and translation.find(ct[1])>-1:
-            #regexp="\\b"+ct[1]+"\\b"
-            translation=translation.replace(ct[1],ct[2])
-            #translation=re.sub(regexp, ct[2], translation)
-            
-    translation=translation.strip()
-    translation=leading_spaces*" "+translation+" "*trailing_spaces
+    if MTUOCServer_MTengine=="GoogleTranslate":
+        translation=Google_translate(segment)
+    elif MTUOCServer_MTengine=="DeepL":
+        translation=DeepL_translate(segment)
+    elif MTUOCServer_MTengine=="Lucy":
+        translation=Lucy_translate(segment)
+        
+        
+        
+        
+    else:    
+        if len(segment)>max_chars_segment:
+            segmentL=[segment]
+            for sp in segment_splitters:
+                newsegmentL=[]
+                for element in segmentL:
+                    if len(element)>max_chars_segment and element.find(sp)>-1:
+                        elementSplitted=element.split(sp)
+                        numelem=len(elementSplitted)
+                        contelem=1
+                        for eS in elementSplitted:
+                            if contelem<numelem:
+                                newsegmentL.append(eS+sp)
+                            else:
+                                newsegmentL.append(eS)
+                            contelem+=1
+                    else:
+                        newsegmentL.append(element)
+                
+                segmentL=newsegmentL
+                correctparts=verify_length(segmentL,max_chars_segment)
+                if correctparts:
+                    break
+            translationL=[]
+            for segment in segmentL:
+                translation=translate_segment_part(segment,ucfirst=False)
+                translationL.append(translation)
+            translation=" ".join(translationL)
+        elif len(tagrestorer.remove_tags(segment).strip())==0:
+            translation=segment
+        else:
+            translation=translate_segment_part(segment)
+        if fix_xml:
+            translation=tagrestorer.fix_xml_tags(translation)
+        
+                
+        translation=translation.strip()
+        translation=leading_spaces*" "+translation+" "*trailing_spaces
         
     return(translation)
 
@@ -371,12 +419,17 @@ def translate_segment_part(segment,ucfirst=True):
         segment=remove_control_characters(segment)
         segmentORI=segment
         if not change_input_files[0]=="None":
+            printLOG(1,"CHANGES INPUT:")
+            printLOG(1,"ORIGINAL:",segmentORI)
             for change in changes_input:
                 tofind=change[0]
                 tochange=change[1]
-                if segment.find(tofind)>-1:
-                    regexp="\\b"+tofind+"\\b"
+                regexp="\\b"+tofind+"\\b"
+                trobat=re.findall(regexp,segment)
+                if trobat:    
                     segment=re.sub(regexp, tochange, segment)
+                    printLOG(1,tofind,tochange)
+            printLOG(1,"CHANGED:",segment)
         printLOG(2,"------------------------------------------")        
         printLOG(2,"Segment:",segment)
         hastags=tagrestorer.has_tags(segment)
@@ -409,18 +462,17 @@ def translate_segment_part(segment,ucfirst=True):
         if len(segmentNOTAGS)<min_chars_segment:
             return(segment)
         toreturn=True 
-        if checkisalpha:
+        if checkistranslatable:
+            
+            segmentNOTAGS=replace_URLs(segmentNOTAGS)
+            segmentNOTAGS=replace_EMAILs(segmentNOTAGS)
             if not tokenizerSL==None:
                 tokens=tokenizerSL.tokenize(segmentNOTAGS)
             else:
-                tokens=segmentNOTAGS.split(" ")
-            for token in tokens:
-                if token.isalpha():
-                    toreturn=False
-                    break
-            if toreturn:
+                tokens=segmentNOTAGS
+            printLOG(3,"Check is translatable:",is_translatable(tokens))
+            if not is_translatable(tokens):
                 return(segment)
-            
         
         if MTUOCServer_EMAILs:
             segmentTAGS=replace_EMAILs(segmentTAGS)
@@ -450,6 +502,9 @@ def translate_segment_part(segment,ucfirst=True):
         if sentencepiece:
             segmentNOTAGSTOK=" ".join(sp.encode(segmentNOTAGS))
             segmentTAGSTOK=" ".join(sp.encode(segmentTAGS))
+        elif BPE:
+            segmentNOTAGSTOK=processBPE(bpeobject,segmentNOTAGS)
+            segmentTAGSTOK=processBPE(bpeobject,segmentTAGS)
         if MTUOCServer_splitNUMs:
             segmentNOTAGSTOK=splitnumbers(segmentNOTAGSTOK)
             segmentTAGSTOK=splitnumbers(segmentTAGSTOK)
@@ -466,6 +521,9 @@ def translate_segment_part(segment,ucfirst=True):
         
         elif MTUOCServer_MTengine=="Moses":
             (translationNOTAGSTOK, alignment)=translate_segment_Moses(segmentNOTAGSTOK)
+            
+        elif MTUOCServer_MTengine=="OpenNMT":
+            (translationNOTAGSTOK, alignment)=translate_segment_OpenNMT(segmentNOTAGSTOK)
         
         printLOG(3,"translationNOTAGSTOK:",translationNOTAGSTOK)
         printLOG(3,"alignment:",alignment)
@@ -486,6 +544,9 @@ def translate_segment_part(segment,ucfirst=True):
             
             if sentencepiece:
                 translationTAGS=sp.decode(translationTAGS.split())
+            elif BPE:
+                translationTAGS=deprocessBPE(translationTAGS)
+            
             if not tokenizerTL==None and not tokenizerSL==None:
                 translationTAGS=tokenizerSL.detokenize(translationTAGS)
             #Leading and trailing tags
@@ -503,6 +564,10 @@ def translate_segment_part(segment,ucfirst=True):
         else:
             if sentencepiece:
                 translation=sp.decode(translationTAGS.split())
+            elif BPE:
+                translation=deprocessBPE(translationTAGS)
+            else:
+                translation=translationTAGS
             if not tokenizerTL==None:
                 translation=tokenizerTL.detokenize(translation)
             elif not tokenizerSL==None:
@@ -527,19 +592,143 @@ def translate_segment_part(segment,ucfirst=True):
         
     except:
         printLOG(1,"ERROR 001:",sys.exc_info())
-        translation="#!#TRANSLATION ERROR#!#:"+str(sys.exc_info()[0])
+        if on_error=="source":
+            translation=segmentORI
+        elif on_error=="errormessage":
+            translation="#!#TRANSLATION ERROR#!#:"+str(sys.exc_info()[0])
+        else:
+            translation="#!#TRANSLATION ERROR#!#:"+str(segmentORI)
     if not change_output_files[0]=="None":
+        printLOG(1,"CHANGES OUTPUT:")
+        printLOG(1,"ORIGINAL:",translation)
         for change in changes_output:
             tofind=change[0]
             tochange=change[1]
-            if translation.find(tofind)>-1:
-                regexp="\\b"+tofind+"\\b"
+            regexp="\\b"+tofind+"\\b"
+            trobat=re.findall(regexp,translation)
+            if trobat: 
                 translation=re.sub(regexp, tochange, translation)
+                printLOG(1,tofind,tochange)
+        printLOG(1,"CHANGED:",translation)
+    
+    
+    if not change_translation_files[0]=="None":
+        printLOG(1,"CHANGES TRANSLATION:")
+        printLOG(1,"ORIGINAL SOURCE:",segmentORI)
+        printLOG(1,"ORIGINAL TARGET:",translation)
+        for change in changes_translation:
+            tofindSOURCE=change[0]
+            tofindTARGET=change[1]
+            tochange=change[2]
+            regexpSOURCE="\\b"+tofindSOURCE+"\\b"
+            regexpTARGET="\\b"+tofindTARGET+"\\b"
+            trobatSOURCE=re.findall(regexpSOURCE,segmentORI)
+            trobatTARGET=re.findall(regexpTARGET,translation)
+            if trobatSOURCE and trobatTARGET: 
+                translation=re.sub(regexpTARGET, tochange, translation)
+                printLOG(1,tofindTARGET,tochange)
+        printLOG(1,"CHANGED TARGET:",translation)
+
+    
     translation=translation.strip()
     translation=leading_spaces*" "+translation+" "*trailing_spaces
     printLOG(2,"Translation:",translation)
     printLOG(2,"------------------------------------------")
     return(translation)  
+
+def Google_translate_text_with_glossary(text):
+    stream = open('config-server.yaml', 'r',encoding="utf-8")
+    config=yaml.load(stream, Loader=yaml.FullLoader)
+    sl_lang=config['sllang']
+    tl_lang=config['tllang']
+    glossary_id=config['glossary']
+    project_id=config['project_id']
+    location=config['location']    
+    client = translateGoogle.TranslationServiceClient()
+    parent = f"projects/{project_id}/locations/{location}"
+
+    glossary = client.glossary_path(
+        project_id, location, glossary_id 
+    )
+
+    glossary_config = translateGoogle.TranslateTextGlossaryConfig(glossary=glossary)
+
+    # Supported language codes: https://cloud.google.com/translate/docs/languages
+    response = client.translate_text(
+        request={
+            "contents": [text],
+            "target_language_code": tl_lang,
+            "source_language_code": sl_lang,
+            "parent": parent,
+            "glossary_config": glossary_config,
+        }
+    )
+    print(response)
+    translation=response.glossary_translations[0]
+    return(translation.translated_text)
+
+def Google_translate_text(text, sl_lang, tl_lang):
+    try:
+        """Translating Text."""
+        # Detail on supported types can be found here:
+        # https://cloud.google.com/translate/docs/supported-formats
+        response = client.translate_text(
+            parent=parent,
+            contents=[text],
+            mime_type="text/plain",  # mime types: text/plain, text/html
+            source_language_code=sl_lang,
+            target_language_code=tl_lang,
+        )
+        # Display the translation for each input text provided
+        translation=response.translations[0]
+        return(translation.translated_text)
+    except:
+        print("ERROR:",sys.exc_info())
+
+    
+def Google_translate(segment):
+    segment=segment.rstrip()
+    if Google_glossary==None:
+        print("Translating without glossary from",Google_sllang,"to",Google_tllang)
+        print("Source segment:",segment)
+        translation=Google_translate_text(segment,Google_sllang,Google_tllang)
+        print("Translation:    ",translation)
+    else:
+        print("Translating with glossary ",glossary,"from",Google_sllang,"to",Google_tllang)
+        print("Source segment:",segment)
+        translation=Google_translate_text_with_glossary(segment)#,sl_lang,tl_lang,glossary)
+        print("Translation:    ",translation)
+    return(translation)
+    
+def DeepL_translate(segment):
+    if DeepL_glossary==None:
+        print("Translating without glossary from",DeepL_sl_lang,"to",DeepL_tl_lang)
+        print("Source segment:",segment)
+        translation = DeepLtranslator.translate_text(segment, source_lang=DeepL_sl_lang, target_lang=DeepL_tl_lang,formality=DeepL_formality,split_sentences=DeepL_split_sentences)
+        print("Translation:    ",translation.text)
+    else:
+        print("Translating with glossary ",DeepL_glossary_name,DeepL_glossary,"from",DeepL_sl_lang,"to",DeepL_tl_lang)
+        print("Source segment:",segment)
+        translation = DeepLtranslator.translate_text(segment, source_lang=DeepL_sl_lang, target_lang=DeepL_tl_lang, glossary=DeepL_glossary, formality=DeepL_formality, split_sentences=DeepL_split_sentences)
+        print("Translation:    ",translation.text)
+
+    return(translation.text)
+
+
+def Lucy_translate(slsegment):
+    try:
+        slsegment="[@àéèíóòú@]. "+slsegment
+        url = Lucy_url 
+        headers = {'Content-Type': 'application/json'}
+        body = {"inputParams": {"param": [{"@name": "TRANSLATION_DIRECTION", "@value": Lucy_TRANSLATION_DIRECTION},{"@name": "MARK_UNKNOWNS", "@value": Lucy_MARK_UNKNOWNS},{"@name": "MARK_ALTERNATIVES", "@value": Lucy_MARK_ALTERNATIVES},{"@name": "MARK_COMPOUNDS", "@value": Lucy_MARK_COMPOUNDS}, {"@name": "INPUT", "@value": slsegment},{"@name": "CHARSET","@value":Lucy_CHARSET}]}}
+        encoded_body = json.dumps(body)
+        traduccio_xml=requests.post(url = url, auth=('traductor', 'traductor'), headers=headers, data=encoded_body).text
+        response_dict = ast.literal_eval(json.dumps(xmltodict.parse(traduccio_xml)))
+        translation=response_dict["task"]["outputParams"]["param"][0]['@value']
+        translation=translation.replace("[@àéèíóòú@]. ","")
+    except:
+        print("ERROR TRANSLATION LUCY:",sys.exc_info())
+    return(translation)
 
 
 #YAML
@@ -560,15 +749,6 @@ stream = open(configfile, 'r',encoding="utf-8")
 config=yaml.load(stream, Loader=yaml.FullLoader)
 
 MTUOCServer_MTengine=config["MTEngine"]["MTengine"]
-startMTEngineV=config["MTEngine"]["startMTEngine"]
-startMTEngineCommand=config["MTEngine"]["startCommand"]
-MTEngineIP=config["MTEngine"]["IP"]
-MTEnginePort=config["MTEngine"]["port"]
-min_len_factor=config["MTEngine"]["min_len_factor"]
-
-
-
-    
 MTUOCServer_port=config["MTUOCServer"]["port"]
 MTUOCServer_type=config["MTUOCServer"]["type"]
 verbosity_level=int(config["MTUOCServer"]["verbosity_level"])
@@ -578,65 +758,73 @@ if log_file=="None":
 else:
     sortidalog=codecs.open(log_file,"a",encoding="utf-8")
     log_file=True
-MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
-fix_xml=config["MTUOCServer"]["fix_xml"]
-strictTagRestoration=config["MTUOCServer"]["strictTagRestoration"]
-MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
+    
+if MTUOCServer_MTengine in ["Marian","Moses","OpenNMT"]:
+    startMTEngineV=config["MTEngine"]["startMTEngine"]
+    startMTEngineCommand=config["MTEngine"]["startCommand"]
+    MTEngineIP=config["MTEngine"]["IP"]
+    MTEnginePort=config["MTEngine"]["port"]
+    min_len_factor=config["MTEngine"]["min_len_factor"]
 
-MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
-MTUOCServer_EMAILs=config["MTUOCServer"]["EMAILs"]
-MTUOCServer_NUMs=config["MTUOCServer"]["replaceNUMs"]
-MTUOCServer_splitNUMs=config["MTUOCServer"]["splitNUMs"]
+    MTUOCServer_restore_tags=config["MTUOCServer"]["restore_tags"]
+    fix_xml=config["MTUOCServer"]["fix_xml"]
+    strictTagRestoration=config["MTUOCServer"]["strictTagRestoration"]
+    MTUOCServer_restore_case=config["MTUOCServer"]["restore_case"]
 
-min_chars_segment=config["MTUOCServer"]["min_chars_segment"]
-max_chars_segment=config["MTUOCServer"]["max_chars_segment"]
-checkisalpha=config["MTUOCServer"]["checkisalpha"]
-segment_splitters=config["MTUOCServer"]["segment_splitters"]
-add_trailing_space=config["MTUOCServer"]["add_trailing_space"]
+    MTUOCServer_URLs=config["MTUOCServer"]["URLs"]
+    MTUOCServer_EMAILs=config["MTUOCServer"]["EMAILs"]
+    MTUOCServer_NUMs=config["MTUOCServer"]["replaceNUMs"]
+    MTUOCServer_splitNUMs=config["MTUOCServer"]["splitNUMs"]
 
-MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
+    min_chars_segment=config["MTUOCServer"]["min_chars_segment"]
+    max_chars_segment=config["MTUOCServer"]["max_chars_segment"]
+    checkistranslatable=config["MTUOCServer"]["checkistranslatable"]
+    onerror=config["MTUOCServer"]["on_error"]
+    segment_splitters=config["MTUOCServer"]["segment_splitters"]
+    add_trailing_space=config["MTUOCServer"]["add_trailing_space"]
 
-sllang=config["Preprocess"]["sl_lang"]
-tllang=config["Preprocess"]["tl_lang"]
-MTUOCtokenizerSL=config["Preprocess"]["sl_tokenizer"]
-MTUOCtokenizerTL=config["Preprocess"]["tl_tokenizer"]
-if MTUOCtokenizerSL=="None": MTUOCtokenizerSL=None
-if MTUOCtokenizerTL=="None": MTUOCtokenizerTL=None
-tcmodel=config["Preprocess"]["tcmodel"]
-truecase=config["Preprocess"]["truecase"]
-#sentencepiece
-sentencepiece=config["Preprocess"]["sentencepiece"]
-spmodel=config["Preprocess"]["sp_model_SL"]
-sp_splitter=config["Preprocess"]["sp_splitter"]
+    MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
 
-#BPE subword-nmt
-BPE=config["Preprocess"]["BPE"]
-bpecodes=config["Preprocess"]["bpecodes"]
-bpe_joiner=config["Preprocess"]["bpe_joiner"]
+    sllang=config["Preprocess"]["sl_lang"]
+    tllang=config["Preprocess"]["tl_lang"]
+    MTUOCtokenizerSL=config["Preprocess"]["sl_tokenizer"]
+    MTUOCtokenizerTL=config["Preprocess"]["tl_tokenizer"]
+    if MTUOCtokenizerSL=="None": MTUOCtokenizerSL=None
+    if MTUOCtokenizerTL=="None": MTUOCtokenizerTL=None
+    tcmodel=config["Preprocess"]["tcmodel"]
+    truecase=config["Preprocess"]["truecase"]
+    #sentencepiece
+    sentencepiece=config["Preprocess"]["sentencepiece"]
+    spmodel=config["Preprocess"]["sp_model_SL"]
+    sp_splitter=config["Preprocess"]["sp_splitter"]
 
-#bos and eos annotate
-bos_annotate=config["Preprocess"]["bos_annotate"]
-if bos_annotate=="None": bos_annotate=""
-eos_annotate=config["Preprocess"]["eos_annotate"]
-if eos_annotate=="None": eos_annotate=""
+    #BPE subword-nmt
+    BPE=config["Preprocess"]["BPE"]
+    bpecodes=config["Preprocess"]["bpecodes"]
+    bpe_joiner=config["Preprocess"]["bpe_joiner"]
 
-unescape_html_input=config["unescape_html_input"]
-escape_html_input=config["escape_html_input"]
+    #bos and eos annotate
+    bos_annotate=config["Preprocess"]["bos_annotate"]
+    if bos_annotate=="None": bos_annotate=""
+    eos_annotate=config["Preprocess"]["eos_annotate"]
+    if eos_annotate=="None": eos_annotate=""
 
-unescape_html_output=config["unescape_html_output"]
-escape_html_output=config["escape_html_output"]
+    unescape_html_input=config["unescape_html_input"]
+    escape_html_input=config["escape_html_input"]
 
-finaldetokenization=config["Preprocess"]["finaldetokenization"]
+    unescape_html_output=config["unescape_html_output"]
+    escape_html_output=config["escape_html_output"]
 
-#Lucy server specific options
-TRANSLATION_DIRECTION=config["Lucy"]["TRANSLATION_DIRECTION"]
-USER=config["Lucy"]["USER"]
-if tcmodel=="None": tcmodel=None
-if tcmodel:
-    from MTUOC_truecaser import Truecaser
-    truecaser=Truecaser(tokenizer=MTUOCtokenizerSL,tc_model=tcmodel)
-else:
-    truecaser=None
+    finaldetokenization=config["Preprocess"]["finaldetokenization"]
+    if tcmodel=="None": tcmodel=None
+    if tcmodel:
+        from MTUOC_truecaser import Truecaser
+        truecaser=Truecaser(tokenizer=MTUOCtokenizerSL,tc_model=tcmodel)
+    else:
+        truecaser=None
+        
+    USER_DEFINED_SYMBOLS=config["USER_DEFINED_SYMBOLS"]
+
 
 change_input_files=config["change_input_files"].split(";")
 changes_input=[]
@@ -665,6 +853,70 @@ if not change_translation_files[0]=="None":
             for row in csvreader:
                 changes_translation.append(row)
 
+
+#GoogleTranslate
+if MTUOCServer_MTengine=="GoogleTranslate":
+    Google_sllang=config["GoogleTranslate"]["sllang"]
+    Google_tllang=config["GoogleTranslate"]["tllang"]
+    Google_glossary=config["GoogleTranslate"]["glossary"]
+    if Google_glossary=="None": Google_glossary=None
+
+    #state None if no glossary is used, otherwise the name of the glossary
+    Google_project_id=config["GoogleTranslate"]["project_id"]
+    Google_location=config["GoogleTranslate"]["location"]
+    Google_jsonfile=config["GoogleTranslate"]["jsonfile"]
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = Google_jsonfile
+
+#DeepL
+if MTUOCServer_MTengine=="DeepL":
+    DeepL_API_key=config["DeepL"]["API_key"]
+    DeepL_sl_lang=config["DeepL"]["sllang"]
+    DeepL_tl_lang=config["DeepL"]["tllang"]
+      #tag_handling: html
+      #one of html, xml
+    DeepL_formality=config["DeepL"]["formality"]
+      #one of default, less, more
+    DeepL_split_sentences=config["DeepL"]["split_sentences"]
+      #one of off, on, nonewlines
+    DeepL_glossary=config["DeepL"]["glossary"]
+    if DeepL_glossary=="None": DeepL_glossary=None
+
+#Lucy
+if MTUOCServer_MTengine=="Lucy":
+    Lucy_url=config["Lucy"]["url"]
+    Lucy_TRANSLATION_DIRECTION=config["Lucy"]["TRANSLATION_DIRECTION"]
+    Lucy_MARK_UNKNOWNS=config["Lucy"]["MARK_UNKNOWNS"]
+    Lucy_MARK_ALTERNATIVES=config["Lucy"]["MARK_ALTERNATIVES"]
+    Lucy_MARK_COMPOUNDS=config["Lucy"]["MARK_COMPOUNDS"]
+    Lucy_CHARSET=config["Lucy"]["CHARSET"]
+
+if MTUOCServer_MTengine in["GoogleTranslate","DeepL","Lucy"]:
+    startMTEngineV=False
+    MTUOCtokenizerSL=None
+    MTUOCtokenizerTL=None
+    MTUOCServer_restore_tags=False
+    MTUOCServer_restore_case=False
+    MTUOCServer_URLs=False
+    MTUOCServer_EMAILs=False
+    MTUOCServer_NUMs=False
+    MTUOCServer_splitNUMs=False
+    min_chars_segment=1
+    max_chars_segment=1000000
+    add_trailing_space=False
+    truecase=False
+    sentencepiece=False
+    BPE=False
+    bos_annotate=False
+    eos_annotate=False
+    finaldetokenization=False
+    
+    if MTUOCServer_MTengine=="GoogleTranslate":
+        client = translateGoogle.TranslationServiceClient()
+        client = translateGoogle.TranslationServiceClient()
+        parent = "projects/"+Google_project_id+"/locations/"+Google_location
+    elif MTUOCServer_MTengine=="DeepL":
+        DeepLtranslator = deepl.Translator(DeepL_API_key)
+
 if startMTEngineV:
     startMTEngine()
 
@@ -689,7 +941,11 @@ if not MTUOCtokenizerTL==None:
     tokenizerTL=tokenizerTLmod.Tokenizer()
 else:
     tokenizerTL=None
-    
+
+
+
+
+
 from MTUOC_tags import TagRestorer
 tagrestorer=TagRestorer()
 
@@ -700,7 +956,9 @@ if sentencepiece:
     sp2= spm.SentencePieceProcessor(model_file=spmodel, out_type=str)
 
 elif BPE:
-    bpeobject=apply_bpe.BPE(open(bpecodes,encoding="utf-8"),separator=bpe_joiner)
+    glossaries=USER_DEFINED_SYMBOLS.split(" ")
+    bpeobject=apply_bpe.BPE(open(bpecodes,encoding="utf-8"),separator=bpe_joiner,glossaries=glossaries)
+    
         
 
 if MTUOCServer_MTengine=="Marian":
@@ -708,42 +966,19 @@ if MTUOCServer_MTengine=="Marian":
             
            
 elif MTUOCServer_MTengine=="OpenNMT":
-    import requests
-    url = "http://"+MTEngineIP+":"+str(MTEnginePort)+"/translator/translate"
-    headers = {'content-type': 'application/json'}
+    (url,headers)=connect_to_OpenNMT()
 
     
 elif MTUOCServer_MTengine=="Moses":
-    proxyMoses = xmlrpc.client.ServerProxy("http://"+MTEngineIP+":"+str(MTEnginePort)+"/RPC2")
-
-
-    
+    proxyMoses=connect_to_Moses()
 
 if MTUOCServer_type=="MTUOC":
-    from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-    class MTUOC_server(WebSocket):
-        def handleMessage(self):
-            self.translation=translate_segment(self.data)
-            self.sendMessage(self.translation)
-
-        def handleConnected(self):
-            printLOG(1,'Connected to: ',self.address[0].split(":")[-1])
-
-        def handleClose(self):
-            printLOG(1,'Disconnected from: ',self.address[0].split(":")[-1])
-    server = SimpleWebSocketServer('', MTUOCServer_port, MTUOC_server)
-    ip=get_IP_info()
-    cadena="MTUOC server IP: "+str(ip)+" port: "+str(MTUOCServer_port)
-    printLOG(1,cadena)
-    server.serveforever()
-    
-elif MTUOCServer_type=="MTUOC2":
     from flask import Flask, jsonify, request, make_response
     cli = sys.modules['flask.cli']
     cli.show_server_banner = lambda *x: None
     STATUS_OK = "ok"
     STATUS_ERROR = "error"
-    printLOG(1,"MTUOC server started as MTUOC2 server")
+    printLOG(1,"MTUOC server started using MTUOC protocol")
     STATUS_ERROR = "error"
     out={}
     def start(url_root="./translator",
@@ -759,7 +994,7 @@ elif MTUOCServer_type=="MTUOC2":
         app.route = prefix_route(app.route, url_root)
 
         @app.route('/translate', methods=['POST'])
-        def translateMTUOC2():
+        def translateMTUOC():
             try:
                 body = request.get_json()
                 ts=translate_segment(body["src"])
@@ -772,13 +1007,19 @@ elif MTUOCServer_type=="MTUOC2":
                 return jsonify(jsonObject)
             except:
                 return make_response("Server Error", 500)
-            
-        app.run(debug=debug, host=host, port=port, use_reloader=False,
-            threaded=True)
+        
+        from waitress import serve
+        serve(app, host=host, port=port,threads= 8)    
+        #app.run(debug=debug, host=host, port=port, use_reloader=False,threaded=True)
     url_root="/"
     ip="0.0.0.0"
     ip=get_IP_info()
     debug="store_true"
+    
+    print("MTUOC server IP:   ", ip)
+    print("MTUOC server port: ", MTUOCServer_port)
+    print("MTUOC server type:  MTUOC")
+    
     start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
 
 elif MTUOCServer_type=="OpenNMT":
@@ -823,13 +1064,19 @@ elif MTUOCServer_type=="OpenNMT":
             return jsonify(out)
             
         
-        app.run(debug=debug, host=host, port=port, use_reloader=False,
-            threaded=True)
+        from waitress import serve
+        serve(app, host=host, port=port,threads= 8)    
+        #app.run(debug=debug, host=host, port=port, use_reloader=False,threaded=True)
     url_root=MTUOCServer_ONMT_url_root
     ip="0.0.0.0"
     ip=get_IP_info()
     debug="store_true"
-    start(url_root=MTUOCServer_ONMT_url_root, host=ip, port=MTUOCServer_port,debug=debug)
+    
+    print("MTUOC server IP:   ", ip)
+    print("MTUOC server port: ", MTUOCServer_port)
+    print("MTUOC server type:  OpenNMT")
+    
+    start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
 
 elif MTUOCServer_type=="NMTWizard":
     from flask import Flask, jsonify, request
@@ -862,12 +1109,18 @@ elif MTUOCServer_type=="NMTWizard":
                 out['error'] = "Error"
                 out['status'] = STATUS_ERROR
             return jsonify(out)
-        app.run(debug=debug, host=host, port=port, use_reloader=False,
-                threaded=True)
-    url_root=""
+        from waitress import serve
+        serve(app, host=host, port=port,threads= 8)    
+        #app.run(debug=debug, host=host, port=port, use_reloader=False,threaded=True)
+    url_root="/"
     ip="0.0.0.0"
     ip=get_IP_info()
     debug="store_true"
+    
+    print("MTUOC server IP:   ", ip)
+    print("MTUOC server port: ", MTUOCServer_port)
+    print("MTUOC server type:  NMTWizard")
+    
     start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
     
 elif MTUOCServer_type=="ModernMT":
@@ -899,10 +1152,22 @@ elif MTUOCServer_type=="ModernMT":
             except:
                 out['status'] = STATUS_ERROR
             return jsonify(out)
-        ip=get_IP_info()
-        app.run(debug=True, host=ip, port=MTUOCServer_port, use_reloader=False,
-                threaded=True)
-    start()
+        #ip=get_IP_info()
+        #app.run(debug=True, host=ip, port=MTUOCServer_port, use_reloader=False, threaded=True)
+    #start()
+        from waitress import serve
+        serve(app, host=host, port=port,threads= 8)    
+        #app.run(debug=debug, host=host, port=port, use_reloader=False,threaded=True)
+    url_root="/"
+    ip="0.0.0.0"
+    ip=get_IP_info()
+    debug="store_true"
+    
+    print("MTUOC server IP:   ", ip)
+    print("MTUOC server port: ", MTUOCServer_port)
+    print("MTUOC server type:  ModernMT")
+    
+    start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
 
 
 elif MTUOCServer_type=="Moses":
@@ -915,83 +1180,10 @@ elif MTUOCServer_type=="Moses":
     # Start the server
     try:
         ip=get_IP_info()
-        cadena="MTUOC server started as Moses server IP: "+str(ip)+" port: "+str(MTUOCServer_port)
-        printLOG(1,cadena)
-        print('\t\t\t\tUse Control-C to exit')
+        print("MTUOC server IP:   ", ip)
+        print("MTUOC server port: ", MTUOCServer_port)
+        print("MTUOC server type:  Moses")
         server.serve_forever()
     except KeyboardInterrupt:
         printLOG(1,'Exiting')
         
-elif MTUOCServer_type=="Lucy":
-    from flask import Flask, jsonify, request
-    from dicttoxml import dicttoxml
-    MTUOCServer_ONMT_url_root=config["MTUOCServer"]["ONMT_url_root"]
-    cli = sys.modules['flask.cli']
-    cli.show_server_banner = lambda *x: None
-    STATUS_OK = "ok"
-    STATUS_ERROR = "error"
-    printLOG(1,"MTUOC server started as Lucy server")
-    STATUS_ERROR = "error"
-    out={}
-    def start(url_root="./AutoTranslateRS/V1.3",
-              host="0.0.0.0",
-              port=5000,
-              debug=True):
-        def prefix_route(route_function, prefix='', mask='{0}{1}'):
-            def newroute(route, *args, **kwargs):
-                return route_function(mask.format(prefix, route), *args, **kwargs)
-            return newroute
-
-        app = Flask(__name__)
-        app.route = prefix_route(app.route, url_root)
-        @app.route('/mtrans/exec/', methods=['POST'])
-        def translateLucy():
-            inputs = request.get_json(force=True)
-            inputs0=inputs['inputParams']
-            
-            out = {}
-            try:
-                out = [[]]
-                ss=inputs0['param'][4]['@value'].replace("[*áéíóúñ*] ","").lstrip()
-                ts=translate_segment(ss)
-
-                WORDS=len(ts.split())
-                CHARACTERS=len(ts)
-                INPUT=ss
-                response_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><task><inputParams><param name="TRANSLATION_DIRECTION" value="'+TRANSLATION_DIRECTION+'"/><param name="MARK_UNKNOWNS" value="0"/><param name="MARK_ALTERNATIVES" value="0"/><param name="MARK_COMPOUNDS" value="0"/><param name="INPUT" value="'+str(INPUT)+'"/><param name="USER" value="'+USER+'"/></inputParams><outputParams><param name="OUTPUT" value="'+str(ts)+'"/><param name="MARK_UNKNOWNS" value="0"/><param name="MARK_ALTERNATIVES" value="0"/><param name="SENTENCES" value="1"/><param name="WORDS" value="'+str(WORDS)+'"/><param name="CHARACTERS" value="'+str(CHARACTERS)+'"/><param name="FORMAT" value="ASCII"/><param name="CHARSET" value="UTF"/><param name="SOURCE_ENCODING" value="UTF-8"/><param name="TARGET_ENCODING" value="UTF-8"/><param name="ERROR_MESSAGE" value=""/></outputParams></task>'
-                out=response_xml
-            except:
-                out['error'] = "Error"
-                out['status'] = STATUS_ERROR
-
-            return out
-            
-        
-        app.run(debug=debug, host=host, port=port, use_reloader=False,
-            threaded=True)
-    url_root=MTUOCServer_ONMT_url_root
-    ip="0.0.0.0"
-    ip=get_IP_info()
-    debug="store_true"
-    start(url_root="/AutoTranslateRS/V1.3", host=ip, port=MTUOCServer_port,debug=debug)
-
-if MTUOCServer_type=="OpusMT":
-    from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
-    
-    class OpusMT_server(WebSocket):
-        def handleMessage(self):
-            self.input=eval(self.data)
-            self.translation=translate_segment(self.input['text'])
-            self.data2 = {'result':  self.translation}
-            self.jsondata=json.dumps(self.data2)
-            self.sendMessage(self.jsondata)
-
-        def handleConnected(self):
-            printLOG(0,'Connected to: ',self.address[0].split(":")[-1])
-
-        def handleClose(self):
-            printLOG(0,'Disconnected from: ',self.address[0].split(":")[-1])
-    server = SimpleWebSocketServer('', MTUOCServer_port, OpusMT_server)
-    ip=get_IP_info()
-    printLOG(1,"OpusMT server IP:",ip," port:",MTUOCServer_port)
-    server.serveforever()

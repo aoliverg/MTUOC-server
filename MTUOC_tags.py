@@ -175,7 +175,7 @@ class TagRestorer():
     def numerate(self,segment):
         numeratedsegment=[]
         cont=0
-        for token in segment.split(" "):
+        for token in segment.split():
             if not token.replace("▁","").strip() in self.taglist:
                 tokenmod=token+"▂"+str(cont)
                 cont+=1
@@ -186,7 +186,7 @@ class TagRestorer():
         
     def retrieve_indexes(self, segment):
         indexes=[]
-        for token in segment.split(" "):            
+        for token in segment.split():            
             if token.find("▂")>-1:
                 parts=token.split("▂")
                 try:
@@ -203,7 +203,7 @@ class TagRestorer():
         return(min_value,max_value)
         
     def insert_open_close(self, TARGETTAGSTOKNUM,opentag,closetag,minpos,maxpos):
-        position=0
+        position=0 
         num=-1
         opendone=False
         closedone=False
@@ -308,6 +308,7 @@ class TagRestorer():
         return res                             
         
     def restore_tags(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK):
+        print("REBUT:",SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK)
         SOURCETAGSTOK=SOURCETAGSTOK.replace(" ▁ "," ")
         ali={}
         nmax=0
@@ -345,6 +346,10 @@ class TagRestorer():
         TARGETNOTAGSTOKNUM=self.numerate(TARGETNOTAGSTOK)
         TARGETTAGSTOKNUM=TARGETNOTAGSTOKNUM.split(" ")
         taglist=self.taglist.copy()
+        print("***SOURCENOTAGSTOKNUM:",SOURCENOTAGSTOKNUM)
+        print("***SOURCETAGSTOKNUM:",SOURCETAGSTOKNUM)
+        print("***TARGETNOTAGSTOKNUM:",TARGETNOTAGSTOKNUM)
+        print("***TARGETTAGSTOKNUM:",TARGETTAGSTOKNUM)
         #finding open-close pairs
         for n in range(0,11):
             opentag="<tag"+str(n)+">"

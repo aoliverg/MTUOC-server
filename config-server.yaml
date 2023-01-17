@@ -15,9 +15,9 @@ MTEngine:
     #for Marian to avoid very short translations
     
 MTUOCServer:
-  port: 8000
-  type: MTUOC2
-  #one of MTUOC, MTUOC2, Moses, ModernMT, OpenNMT, NMTWizard
+  port: 8005
+  type: MTUOC
+  #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   verbosity_level: 3
   #level 1: start, stop, errors; level 2: level 1 and source and translated segments; level 3: levels 1 and 2 and details on translation
   log_file: log.log
@@ -36,7 +36,9 @@ MTUOCServer:
   unescape_html: True
   min_chars_segment: 2
   max_chars_segment: 300
-  checkisalpha: False
+  checkistranslatable: True
+  on_error: errorsource
+  #one of: source errormessage errorsource
   segment_splitters: 
     - ";"
     - ":"
@@ -46,15 +48,6 @@ MTUOCServer:
   ONMT_url_root: "/translator"
   #specific configuration when acting as ONMT server
   
-Watchdog:
-  #these parameters are for MTUOC-watchdog
-  MTUOCserverconfig: config-server.yaml
-  segment: This is a test segment.
-  time: 300
-  MTUOCserver_binary: start
-  Marianserver_binary: marian-server-C
-  
-
 Preprocess:
   sl_lang: en
   tl_lang: es
@@ -100,10 +93,41 @@ escape_html_output: False
 
 change_input_files: None
 change_output_files: None
-change_translation_files: None 
+change_translation_files: None
 # None or list of files separated by ; error_correction.txt;translated_names.txt
 
-#Lucy server options
+USER_DEFINED_SYMBOLS: <tag0> <tag1> <tag2> <tag3> <tag4> <tag5> <tag6> <tag7> <tag8> <tag9> <tag10> </tag0> </tag1> </tag2> </tag3> </tag4> </tag5> </tag6> </tag7> </tag8> </tag9> </tag10> <tag0/> <tag1/> <tag2/> <tag3/> <tag4/> <tag5/> <tag6/> <tag7/> <tag8/> <tag9/> <tag10/>
+
+#GoogleTranslate configuration
+
+GoogleTranslate:
+  sllang: en
+  tllang: es
+  glossary: None
+  #state None if no glossary is used, otherwise the name of the glossary
+  project_id: XXXXXXXXXX
+  location: us-central1
+  jsonfile: XXXXXXXXXX
+  
+#DeepL configuration
+DeepL:
+  API_key: XXXXXXXXXX
+  sllang: EN
+  tllang: ES
+  #tag_handling: html
+  #one of html, xml
+  formality: default
+  #one of default, less, more
+  split_sentences: "off"
+  #one of "off", "on", "nonewlines"
+  glossary: None
+  
+#Lucy configuration
 Lucy:
-    TRANSLATION_DIRECTION: ENGLISH-SPANISH
-    USER: traductor
+  url: http://XXXXXXXXXX:8080/AutoTranslateRS/V1.3/mtrans/exec/
+  TRANSLATION_DIRECTION: SPANISH-CATALAN
+  MARK_UNKNOWNS: 0
+  MARK_ALTERNATIVES: 0
+  MARK_COMPOUNDS: 0
+  CHARSET: UTF
+  
