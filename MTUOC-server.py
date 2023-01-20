@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 10/01/2023
+#    v. 19/01/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -17,23 +17,15 @@
 
 ###GENERIC IMPORTS
 import sys
-import threading
 import os
 import socket
 import time
 import re
 from datetime import datetime
-import importlib
-import importlib.util
-import codecs
-import xmlrpc.client
-import json
-import pickle
-import sentencepiece as spm
-from subword_nmt import apply_bpe
-import collections
 
-import lxml
+import codecs
+import json
+
 
 import html
 
@@ -46,8 +38,6 @@ import regex as rx
 
 import string as stringmodule
 
-import requests
-
 ###YAML IMPORTS
 import yaml
 from yaml import load, dump
@@ -56,16 +46,6 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
     
-###GoogleTranslate imports
-from google.cloud import translate as translateGoogle
-from google.cloud import translate
-
-###DeepL imports
-import deepl
-
-###Lucy imports
-import ast
-import xmltodict
 
 def is_first_letter_upper(segment):
     for character in segment:
@@ -856,6 +836,9 @@ if not change_translation_files[0]=="None":
 
 #GoogleTranslate
 if MTUOCServer_MTengine=="GoogleTranslate":
+    ###GoogleTranslate imports
+    from google.cloud import translate as translateGoogle
+    from google.cloud import translate
     Google_sllang=config["GoogleTranslate"]["sllang"]
     Google_tllang=config["GoogleTranslate"]["tllang"]
     Google_glossary=config["GoogleTranslate"]["glossary"]
@@ -869,6 +852,8 @@ if MTUOCServer_MTengine=="GoogleTranslate":
 
 #DeepL
 if MTUOCServer_MTengine=="DeepL":
+    ###DeepL imports
+    import deepl
     DeepL_API_key=config["DeepL"]["API_key"]
     DeepL_sl_lang=config["DeepL"]["sllang"]
     DeepL_tl_lang=config["DeepL"]["tllang"]
@@ -883,6 +868,10 @@ if MTUOCServer_MTengine=="DeepL":
 
 #Lucy
 if MTUOCServer_MTengine=="Lucy":
+    ###Lucy imports
+    import ast
+    import xmltodict
+    import requests
     Lucy_url=config["Lucy"]["url"]
     Lucy_TRANSLATION_DIRECTION=config["Lucy"]["TRANSLATION_DIRECTION"]
     Lucy_MARK_UNKNOWNS=config["Lucy"]["MARK_UNKNOWNS"]
@@ -925,6 +914,7 @@ if args.port:
 if args.type:
     MTUOCServer_type=args.type
 if not MTUOCtokenizerSL==None:
+    import importlib.util
     if not MTUOCtokenizerSL.endswith(".py"): MTUOCtokenizerSL=MTUOCtokenizerSL+".py"
     spec = importlib.util.spec_from_file_location('', MTUOCtokenizerSL)
     tokenizerSLmod = importlib.util.module_from_spec(spec)
@@ -934,6 +924,8 @@ else:
     tokenizerSL=None
 
 if not MTUOCtokenizerTL==None:
+    import importlib.util
+
     if not MTUOCtokenizerTL.endswith(".py"): MTUOCtokenizerTL=MTUOCtokenizerTL+".py"
     spec = importlib.util.spec_from_file_location('', MTUOCtokenizerTL)
     tokenizerTLmod = importlib.util.module_from_spec(spec)
@@ -952,10 +944,12 @@ tagrestorer=TagRestorer()
 
 ###sentencepiece
 if sentencepiece:
+    import sentencepiece as spm
     sp= spm.SentencePieceProcessor(model_file=spmodel, out_type=str, add_bos=bos_annotate, add_eos=eos_annotate)
     sp2= spm.SentencePieceProcessor(model_file=spmodel, out_type=str)
 
 elif BPE:
+    from subword_nmt import apply_bpe
     glossaries=USER_DEFINED_SYMBOLS.split(" ")
     bpeobject=apply_bpe.BPE(open(bpecodes,encoding="utf-8"),separator=bpe_joiner,glossaries=glossaries)
     
