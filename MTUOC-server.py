@@ -1,7 +1,7 @@
 #    MTUOC-server v 5
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 19/01/2023
+#    v. 26/03/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -446,7 +446,7 @@ def translate_segment_part(segment,ucfirst=True):
             
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
             segmentNOTAGS=replace_EMAILs(segmentNOTAGS)
-            if not tokenizerSL==None:
+            if tokenize_SL and not tokenizerSL==None:
                 tokens=tokenizerSL.tokenize(segmentNOTAGS)
             else:
                 tokens=segmentNOTAGS
@@ -475,13 +475,13 @@ def translate_segment_part(segment,ucfirst=True):
             segmentTAGS=truecaser.truecase(segmentTAGS)
             segmentNOTAGS=truecaser.truecase(segmentNOTAGS)
         
-        if not tokenizerSL==None:
+        if tokenize_SL and not tokenizerSL==None:
             segmentNOTAGSTOK=tokenizerSL.tokenize(segmentNOTAGS)
             segmentTAGSTOK=tokenizerSL.tokenize(segmentTAGS)
         
         if sentencepiece:
-            segmentNOTAGSTOK=" ".join(sp.encode(segmentNOTAGS))
-            segmentTAGSTOK=" ".join(sp.encode(segmentTAGS))
+            segmentNOTAGSTOK=" ".join(spSL.encode(segmentNOTAGS))
+            segmentTAGSTOK=" ".join(spSL.encode(segmentTAGS))
         elif BPE:
             segmentNOTAGSTOK=processBPE(bpeobject,segmentNOTAGS)
             segmentTAGSTOK=processBPE(bpeobject,segmentTAGS)
@@ -517,17 +517,19 @@ def translate_segment_part(segment,ucfirst=True):
             translationTAGS=translationNOTAGSTOK
         printLOG(3,"translationTAGS:",translationTAGS)
         
-        if not bos_annotate=="" and translationTAGS.startswith(bos_annotate+" "):translationTAGS=translationTAGS.replace(bos_annotate+" ","").strip()
-        if not eos_annotate=="" and translationTAGS.endswith(" "+eos_annotate):translationTAGS=translationTAGS.replace(" "+eos_annotate,"").strip()
+        if bos_annotate and translationTAGS.startswith(bos_symbol+" "):translationTAGS=translationTAGS.replace(bos_symbol+" ","").strip()
+        if eos_annotate and translationTAGS.endswith(" "+eos_symbol):translationTAGS=translationTAGS.replace(" "+eos_symbol,"").strip()
         printLOG(3,"SELECTED TRANSLATION SIMPLE TAGS",translationTAGS)
         if hastags:
             
             if sentencepiece:
-                translationTAGS=sp.decode(translationTAGS.split())
+                translationTAGS=spTL.decode(translationTAGS.split())
             elif BPE:
                 translationTAGS=deprocessBPE(translationTAGS)
             
-            if not tokenizerTL==None and not tokenizerSL==None:
+            if tokenize_SL and not tokenizerTL==None:
+                translationTAGS=tokenizerTL.detokenize(translationTAGS)
+            if tokenize_SL and tokenizerTL==None and not tokenizerSL==None:
                 translationTAGS=tokenizerSL.detokenize(translationTAGS)
             #Leading and trailing tags
             if tagInici:
@@ -543,7 +545,7 @@ def translate_segment_part(segment,ucfirst=True):
             translation=tagrestorer.repairSpacesTags(segment,translationTAGS)
         else:
             if sentencepiece:
-                translation=sp.decode(translationTAGS.split())
+                translation=spTL.decode(translationTAGS.split())
             elif BPE:
                 translation=deprocessBPE(translationTAGS)
             else:
@@ -767,6 +769,7 @@ if MTUOCServer_MTengine in ["Marian","Moses","OpenNMT"]:
 
     sllang=config["Preprocess"]["sl_lang"]
     tllang=config["Preprocess"]["tl_lang"]
+    tokenize_SL=config["Preprocess"]["tokenize_SL"]
     MTUOCtokenizerSL=config["Preprocess"]["sl_tokenizer"]
     MTUOCtokenizerTL=config["Preprocess"]["tl_tokenizer"]
     if MTUOCtokenizerSL=="None": MTUOCtokenizerSL=None
@@ -775,7 +778,8 @@ if MTUOCServer_MTengine in ["Marian","Moses","OpenNMT"]:
     truecase=config["Preprocess"]["truecase"]
     #sentencepiece
     sentencepiece=config["Preprocess"]["sentencepiece"]
-    spmodel=config["Preprocess"]["sp_model_SL"]
+    spmodelSL=config["Preprocess"]["sp_model_SL"]
+    spmodelTL=config["Preprocess"]["sp_model_TL"]
     sp_splitter=config["Preprocess"]["sp_splitter"]
 
     #BPE subword-nmt
@@ -785,9 +789,9 @@ if MTUOCServer_MTengine in ["Marian","Moses","OpenNMT"]:
 
     #bos and eos annotate
     bos_annotate=config["Preprocess"]["bos_annotate"]
-    if bos_annotate=="None": bos_annotate=""
+    bos_symbol=config["Preprocess"]["bos_symbol"]
     eos_annotate=config["Preprocess"]["eos_annotate"]
-    if eos_annotate=="None": eos_annotate=""
+    eos_symbol=config["Preprocess"]["eos_symbol"]
 
     unescape_html_input=config["unescape_html_input"]
     escape_html_input=config["escape_html_input"]
@@ -945,8 +949,8 @@ tagrestorer=TagRestorer()
 ###sentencepiece
 if sentencepiece:
     import sentencepiece as spm
-    sp= spm.SentencePieceProcessor(model_file=spmodel, out_type=str, add_bos=bos_annotate, add_eos=eos_annotate)
-    sp2= spm.SentencePieceProcessor(model_file=spmodel, out_type=str)
+    spSL= spm.SentencePieceProcessor(model_file=spmodelSL, out_type=str, add_bos=bos_annotate, add_eos=eos_annotate)
+    spTL= spm.SentencePieceProcessor(model_file=spmodelTL, out_type=str)
 
 elif BPE:
     from subword_nmt import apply_bpe
@@ -998,6 +1002,7 @@ if MTUOCServer_type=="MTUOC":
                     
                     "tgt": ts # Call MTUOC
                 }
+                printLOG(0,jsonObject)
                 return jsonify(jsonObject)
             except:
                 return make_response("Server Error", 500)

@@ -308,7 +308,6 @@ class TagRestorer():
         return res                             
         
     def restore_tags(self,SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK):
-        print("REBUT:",SOURCENOTAGSTOK, SOURCETAGSTOK, SELECTEDALIGNMENT, TARGETNOTAGSTOK)
         SOURCETAGSTOK=SOURCETAGSTOK.replace(" ▁ "," ")
         ali={}
         nmax=0
@@ -346,10 +345,6 @@ class TagRestorer():
         TARGETNOTAGSTOKNUM=self.numerate(TARGETNOTAGSTOK)
         TARGETTAGSTOKNUM=TARGETNOTAGSTOKNUM.split(" ")
         taglist=self.taglist.copy()
-        print("***SOURCENOTAGSTOKNUM:",SOURCENOTAGSTOKNUM)
-        print("***SOURCETAGSTOKNUM:",SOURCETAGSTOKNUM)
-        print("***TARGETNOTAGSTOKNUM:",TARGETNOTAGSTOKNUM)
-        print("***TARGETTAGSTOKNUM:",TARGETTAGSTOKNUM)
         #finding open-close pairs
         for n in range(0,11):
             opentag="<tag"+str(n)+">"
@@ -363,7 +358,6 @@ class TagRestorer():
                 postrad.append(ali[maxpos])
                 minpostrad=min(postrad)
                 maxpostrad=max(postrad)
-                print(minpostrad,maxpostrad)
                 TARGETTAGSTOKNUM=self.insert_open_close(TARGETTAGSTOKNUM,opentag,closetag,minpostrad,maxpostrad)
                 taglist.remove(opentag)
                 taglist.remove(closetag)
