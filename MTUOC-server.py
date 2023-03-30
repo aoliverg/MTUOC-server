@@ -399,8 +399,8 @@ def translate_segment_part(segment,ucfirst=True):
         segment=remove_control_characters(segment)
         segmentORI=segment
         if not change_input_files[0]=="None":
-            printLOG(1,"CHANGES INPUT:")
-            printLOG(1,"ORIGINAL:",segmentORI)
+            printLOG(3,"CHANGES INPUT:")
+            printLOG(3,"ORIGINAL:",segmentORI)
             for change in changes_input:
                 tofind=change[0]
                 tochange=change[1]
@@ -408,8 +408,8 @@ def translate_segment_part(segment,ucfirst=True):
                 trobat=re.findall(regexp,segment)
                 if trobat:    
                     segment=re.sub(regexp, tochange, segment)
-                    printLOG(1,tofind,tochange)
-            printLOG(1,"CHANGED:",segment)
+                    printLOG(3,tofind,tochange)
+            printLOG(3,"CHANGED:",segment)
         printLOG(2,"------------------------------------------")        
         printLOG(2,"Segment:",segment)
         hastags=tagrestorer.has_tags(segment)
@@ -446,12 +446,12 @@ def translate_segment_part(segment,ucfirst=True):
             
             segmentNOTAGS=replace_URLs(segmentNOTAGS)
             segmentNOTAGS=replace_EMAILs(segmentNOTAGS)
-            if tokenize_SL and not tokenizerSL==None:
+            if not tokenizerSL==None:
                 tokens=tokenizerSL.tokenize(segmentNOTAGS)
             else:
                 tokens=segmentNOTAGS
             printLOG(3,"Check is translatable:",is_translatable(tokens))
-            if not is_translatable(tokens):
+            if not is_translatable(tokens):                
                 return(segment)
         
         if MTUOCServer_EMAILs:
@@ -581,8 +581,8 @@ def translate_segment_part(segment,ucfirst=True):
         else:
             translation="#!#TRANSLATION ERROR#!#:"+str(segmentORI)
     if not change_output_files[0]=="None":
-        printLOG(1,"CHANGES OUTPUT:")
-        printLOG(1,"ORIGINAL:",translation)
+        printLOG(3,"CHANGES OUTPUT:")
+        printLOG(3,"ORIGINAL:",translation)
         for change in changes_output:
             tofind=change[0]
             tochange=change[1]
@@ -590,14 +590,14 @@ def translate_segment_part(segment,ucfirst=True):
             trobat=re.findall(regexp,translation)
             if trobat: 
                 translation=re.sub(regexp, tochange, translation)
-                printLOG(1,tofind,tochange)
-        printLOG(1,"CHANGED:",translation)
+                printLOG(3,tofind,tochange)
+        printLOG(3,"CHANGED:",translation)
     
     
     if not change_translation_files[0]=="None":
-        printLOG(1,"CHANGES TRANSLATION:")
-        printLOG(1,"ORIGINAL SOURCE:",segmentORI)
-        printLOG(1,"ORIGINAL TARGET:",translation)
+        printLOG(3,"CHANGES TRANSLATION:")
+        printLOG(3,"ORIGINAL SOURCE:",segmentORI)
+        printLOG(3,"ORIGINAL TARGET:",translation)
         for change in changes_translation:
             tofindSOURCE=change[0]
             tofindTARGET=change[1]
@@ -608,8 +608,8 @@ def translate_segment_part(segment,ucfirst=True):
             trobatTARGET=re.findall(regexpTARGET,translation)
             if trobatSOURCE and trobatTARGET: 
                 translation=re.sub(regexpTARGET, tochange, translation)
-                printLOG(1,tofindTARGET,tochange)
-        printLOG(1,"CHANGED TARGET:",translation)
+                printLOG(3,tofindTARGET,tochange)
+        printLOG(3,"CHANGED TARGET:",translation)
 
     
     translation=translation.strip()
