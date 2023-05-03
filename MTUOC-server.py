@@ -343,11 +343,7 @@ def translate_segment(segment):
     elif MTUOCServer_MTengine=="DeepL":
         translation=DeepL_translate(segment)
     elif MTUOCServer_MTengine=="Lucy":
-        translation=Lucy_translate(segment)
-        
-        
-        
-        
+        translation=Lucy_translate(segment) 
     else:    
         if len(segment)>max_chars_segment:
             segmentL=[segment]
@@ -839,10 +835,7 @@ if not change_translation_files[0]=="None":
 
 
 #GoogleTranslate
-if MTUOCServer_MTengine=="GoogleTranslate":
-    ###GoogleTranslate imports
-    from google.cloud import translate as translateGoogle
-    from google.cloud import translate
+
     Google_sllang=config["GoogleTranslate"]["sllang"]
     Google_tllang=config["GoogleTranslate"]["tllang"]
     Google_glossary=config["GoogleTranslate"]["glossary"]
@@ -1002,7 +995,7 @@ if MTUOCServer_type=="MTUOC":
                     
                     "tgt": ts # Call MTUOC
                 }
-                printLOG(0,jsonObject)
+                printLOG(0,verbosity_level,jsonObject)
                 return jsonify(jsonObject)
             except:
                 return make_response("Server Error", 500)

@@ -18,7 +18,7 @@ MTUOCServer:
   port: 8005
   type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
-  verbosity_level: 3
+  verbosity_level: 0
   #level 1: start, stop, errors; level 2: level 1 and source and translated segments; level 3: levels 1 and 2 and details on translation
   log_file: log.log
   #log file path and name or None
@@ -29,8 +29,11 @@ MTUOCServer:
   #if true, verifies that all tags are in the target, otherwise returns translation without tags
   restore_case: True
   URLs: True
+  code_URLs: "@URL@"
   EMAILs: True
+  code_EMAILs: "@EMAIL@"
   replaceNUMs: False
+  code_NUMs: @NUM@
   splitNUMs: False
   add_trailing_space: True
   unescape_html: True
@@ -51,10 +54,9 @@ MTUOCServer:
 Preprocess:
   sl_lang: en
   tl_lang: es
+  tokenize_SL: False
   sl_tokenizer: MTUOC_tokenizer_eng.py
-  #None if no tokenization for source language
   tl_tokenizer: MTUOC_tokenizer_spa.py
-  #None if no tokenization for target language
   #Truecasing
   tcmodel: tc.en
   #or None if not used
@@ -75,9 +77,11 @@ Preprocess:
   
   #or None if not used
   ###################
-  bos_annotate: <s>
+  bos_annotate: True
+  bos_symbol: <s>
   #None or <s> (or other)
-  eos_annotate: </s>
+  eos_annotate: True
+  eos_symbol: </s>
   #None or </s> (or other)
 
   finaldetokenization: True
