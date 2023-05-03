@@ -403,7 +403,7 @@ class TagRestorer():
             tagsPRE=self.get_tags(myxml)
             myxml2="<fix_xml>"+myxml+"</fix_xml>"
             soup = BeautifulSoup(myxml2,'xml')
-            fixed=str(soup).replace("<fix_xml>","").replace("</fix_xml>","")
+            fixed=str(soup).replace("<fix_xml>","").replace("</fix_xml>","").split("\n")[-1]
             tags=self.get_tags(fixed)
             for TP in tagsPRE:
                 if not TP in tags:

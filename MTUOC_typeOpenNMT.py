@@ -56,7 +56,7 @@ def start_OpenNMT_server():
     debug="store_true"
     
     print("MTUOC server IP:   ", ip)
-    print("MTUOC server port: ", MTUOCServer_port)
+    print("MTUOC server port: ", config.MTUOCServer_port)
     print("MTUOC server type:  OpenNMT")
     
-    start(url_root=url_root, host=ip, port=MTUOCServer_port,debug=debug)
+    start(url_root=url_root, host=ip, port=config.MTUOCServer_port,debug=debug)
