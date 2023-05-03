@@ -33,7 +33,7 @@ MTUOCServer:
   EMAILs: True
   code_EMAILs: "@EMAIL@"
   replaceNUMs: False
-  code_NUMs: @NUM@
+  code_NUMs: "@NUM@"
   splitNUMs: False
   add_trailing_space: True
   unescape_html: True
