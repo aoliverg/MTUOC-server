@@ -1,3 +1,19 @@
+#    MTUOC_translate
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 23/05/2023
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import config
 import sys
 import re
@@ -298,7 +314,9 @@ def translate_segment(segment):
     leading_spaces=len(segment)-len(segment.lstrip())
     trailing_spaces=len(segment)-len(segment.rstrip())-1
     segmentPre=preprocess_segment(segmentNOTAGS)  
+    printLOG(3,"segmentPre:",segmentPre) 
     segmentPreTAGS=preprocess_segment(segmentTAGS)     
+    printLOG(3,"segmentPreTAGS:",segmentPreTAGS) 
     if config.MTUOCServer_MTengine=="Marian":
         translation_candidates=translate_segment_Marian(segmentPre)
     elif config.MTUOCServer_MTengine=="Moses":
@@ -312,7 +330,6 @@ def translate_segment(segment):
     translation_candidates["segmentNOTAGS"]=segmentNOTAGS
     if hastags:
         translation_candidates=restore_tags_translation_candidates(translation_candidates)  
-        #(translation_candidates["segmentTAGS"],equil)=config.tagrestorer.replace_tags(translation_candidates["segmentOrig"])
         
     else:
         translation_candidates["translationTAGS"]=translation_candidates["translationNOTAGSPre"]

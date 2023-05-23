@@ -1,3 +1,20 @@
+#    MTUOC_preprocess
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 23/05/2023
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 import config
 from MTUOC_misc import printLOG
 import regex as rx
@@ -31,6 +48,8 @@ def preprocess_segment(segment):
         segment=html.escape(segment)
     if config.unescape_html_input:
         segment=html.unescape(segment)
+    segment=segment.replace(" <tag0>"," <tag0> ")
+    segment=segment.replace(" </tag0>"," <tag0> ")
     segment=remove_control_characters(segment) 
     hastags=config.tagrestorer.has_tags(segment)
     originaltags=config.tagrestorer.get_tags(segment)

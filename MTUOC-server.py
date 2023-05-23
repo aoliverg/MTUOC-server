@@ -1,7 +1,7 @@
 #    MTUOC-server v 6
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 03/04/2023
+#    v. 23/05/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -275,7 +275,6 @@ elif config.MTUOCServer_MTengine=="Moses":
 if config.MTUOCServer_type=="MTUOC":
     start_MTUOC_server()
 elif config.MTUOCServer_type=="Moses":
-    print("***STARTING MOSES")
     start_Moses_server()
     print("MOSES STARTED")
 elif config.MTUOCServer_type=="OpenNMT":

@@ -1,6 +1,6 @@
 #    MTUOC_tags
-#    Copyright (C) 2022  Antoni Oliver
-#    v. 2/12/2022
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 23/05/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -13,6 +13,7 @@
 
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import re
 from collections import Counter
 from bs4 import BeautifulSoup
@@ -120,12 +121,12 @@ class TagRestorer():
             
     def remove_start_end_tag(self, segment):
         try:
-            starttag=re.match("</?tag[0-9]+>",segment)
+            starttag=re.match("(</?tag[0-9]+>)+",segment)
             starttag=starttag.group()
         except:            
             starttag=""
         try:
-            endtag=re.search("</?tag[0-9]+>$",segment)
+            endtag=re.search("(</?tag[0-9]+>)+$",segment)
             endtag=endtag.group()
         except:
             endtag=""
@@ -318,7 +319,8 @@ class TagRestorer():
             (a1,a2)=a.split("-")
             a1=int(a1)
             a2=int(a2)
-            ali[a1]=a2
+            if not a1 in ali: ####AFEGIT AIXÒ
+                ali[a1]=a2
             if a1>nmax: nmax=a1
             if a1<nmin: nmin=a1
             if a2>mmax: mmax=a2
