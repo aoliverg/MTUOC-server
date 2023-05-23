@@ -31,7 +31,7 @@ MTUOCServer:
   log_file: log.log
   ONMT_url_root: "/translator"
   
-SRX_file: segment.srx
+SRX_file: segmentSC.srx
 
 
 Preprocess:
