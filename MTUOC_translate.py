@@ -242,6 +242,13 @@ def translate_segment(segment):
     if not config.truecase==None and config.truecase in ["upper","all"] and segmentnotags.isupper() and not segment=="@URL@" and not segment=="@EMAIL@": 
         totruecase=True
         toupperfinal=True
+    
+    if config.checkistranslatable:
+        segmentNOTAGS=replace_URLs(segment,config.code_URLs)
+        segmentNOTAGS=replace_EMAILs(segment,config.code_EMAILs)
+        tokens=tokenizationSL(segmentNOTAGS)
+        if not is_translatable(tokens): 
+            return(segment)
         
     if totruecase:        
         segment=config.truecaser.truecase(segment)
@@ -267,13 +274,7 @@ def translate_segment(segment):
     if len(segmentNOTAGS)<config.min_chars_segment:
         return(segment)
         
-    if config.checkistranslatable:
-        segmentNOTAGS=replace_URLs(segmentNOTAGS,config.code_URLs)
-        segmentNOTAGS=replace_EMAILs(segmentNOTAGS,config.code_EMAILs)
-        tokens=tokenizationSL(segmentNOTAGS)
-        printLOG(3,"Check is translatable:",is_translatable(tokens))
-        if not is_translatable(tokens):                
-            return(segment)
+    
     
     if config.MTUOCServer_EMAILs:
         segmentTAGS=replace_EMAILs(segmentTAGS)
