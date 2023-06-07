@@ -1,4 +1,5 @@
 #    MTUOC_truecaser
+#    v. 07/06/2023
 #    Copyright (C) 2021  Antoni Oliver
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -148,7 +149,7 @@ class Truecaser():
                 pass
         return(nsegment)
         
-    def detruecase(self,line,tokenizer):
+    def detruecase_old(self,line,tokenizer):
         tokens=line.split(" ")
         new=[]
         yet=False
@@ -164,7 +165,11 @@ class Truecaser():
                 new.append(token)
         line=" ".join(new)
         detrue=tokenizer.detokenize_j(line)
-        return(line)    
+        return(line) 
+
+    def detruecase(self,line):
+        detruecased=line.capitalize()
+        return(line) 
     
 
 if __name__ == "__main__":

@@ -1,3 +1,20 @@
+#    MTUOC_Moses
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 07/06/2023
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 import time
 import config
 
@@ -28,7 +45,6 @@ def translateAliMoses(aliBRUT):
     return(newali)
     
 def translate_segment_Moses(segmentPre):
-    print("***translate_segment_Moses",segmentPre)
     param = {"text": segmentPre}
     result = config.proxyMoses.translate(param)
     translation_candidates={}
@@ -45,7 +61,6 @@ def translate_segment_Moses(segmentPre):
         translation_candidates["alignments"].append(alignments)
         
     
-    print("***translation_candidates",translation_candidates)
     return(translation_candidates)
     
 '''

@@ -8,10 +8,10 @@ MTEngine:
     min_len_factor: 0.5
     
 MTUOCServer:
-  port: 8005
+  port: 8000
   type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
-  verbosity_level: 1
+  verbosity_level: 3
   
   checkistranslatable: True
   restore_tags: True
@@ -31,18 +31,20 @@ MTUOCServer:
   log_file: log.log
   ONMT_url_root: "/translator"
   
-SRX_file: segmentSC.srx
+SRX_file: segment.srx
 
 
 Preprocess:
   sl_lang: en
   tl_lang: es
-  tokenize_SL: False
+  tokenize_SL: True
   sl_tokenizer: MTUOC_tokenizer_eng.py
+  #one of the MTUOC-tokenizers or state Moses if you use Moses tokenizers
   tl_tokenizer: MTUOC_tokenizer_spa.py
+  #one of the MTUOC-tokenizers or state Moses if you use Moses tokenizers
   
   segment_input: True
-  SRXfile: segment.srx
+  SRXfile: segmentSC.srx
   SRXlang: English
   
   replaceNUMs: False
@@ -51,7 +53,7 @@ Preprocess:
   #Truecasing
   tcmodel: tc.en
   #or None if not used
-  truecase: upper
+  truecase: all
   #one of None, all, upper
   ###SentencePiece###
   sentencepiece: True

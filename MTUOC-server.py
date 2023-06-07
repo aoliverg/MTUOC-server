@@ -1,7 +1,7 @@
 #    MTUOC-server v 6
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 23/05/2023
+#    v. 07/06/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -39,6 +39,9 @@ from MTUOC_misc import get_IP_info
 
 from MTUOC_Marian import connect_to_Marian
 from MTUOC_Marian import translate_segment_Marian
+
+from MTUOC_OpenNMT import connect_to_OpenNMT
+from MTUOC_OpenNMT import translate_segment_OpenNMT
 
 from MTUOC_Moses import connect_to_Moses
 from MTUOC_Moses import translate_segment_Moses
@@ -115,17 +118,28 @@ config.tokenizerTL=configYAML["Preprocess"]["tl_tokenizer"]
 if config.tokenizerSL=="None": config.tokenizerSL=None
 if config.tokenizerTL=="None": config.tokenizerTL=None
 
-if not config.tokenizerSL==None:
+if config.tokenizerSL=="Moses":
+    config.tokenizerSLType="Moses"
+    import mosestokenizer
+    config.tokenizerSL = mosestokenizer.MosesTokenizer(config.sllang)
+    config.tokenizerSLType="Moses"
+elif not config.tokenizerSL==None:
+    config.tokenizerSLType="MTUOC"
     import importlib.util
     if not config.tokenizerSL.endswith(".py"): config.tokenizerSL=MTUOCtokenizerSL+".py"
     spec = importlib.util.spec_from_file_location('', config.tokenizerSL)
     tokenizerSLmod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(tokenizerSLmod)
     config.tokenizerSL=tokenizerSLmod.Tokenizer()
+    
 else:
     config.tokenizerSL=None
     
-if not config.tokenizerTL==None:
+if config.tokenizerTL=="Moses":
+    import mosestokenizer
+    config.tokenizerTL = mosestokenizer.MosesTokenizer(config.tllang)
+    config.tokenizerTLType="Moses"
+elif not config.tokenizerTL==None:
     import importlib.util
     if not config.tokenizerTL.endswith(".py"): config.tokenizerTL=tokenizerTL+".py"
     spec = importlib.util.spec_from_file_location('', config.tokenizerTL)

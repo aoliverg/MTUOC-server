@@ -1,6 +1,6 @@
-#    MTUOC_splitnumbers.py
-#    Copyright (C) 2021  Antoni Oliver
-#
+#    MTUOC_splitnumbers
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 07/06/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -13,6 +13,7 @@
 
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 
 import re
 import sys

@@ -1,3 +1,20 @@
+#    MTUOC_translate
+#    Copyright (C) 2023  Antoni Oliver
+#    v. 07/06/2023
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
 import config
 import sys
 import re
@@ -242,17 +259,15 @@ def translate_segment(segment):
     if not config.truecase==None and config.truecase in ["upper","all"] and segmentnotags.isupper() and not segment=="@URL@" and not segment=="@EMAIL@": 
         totruecase=True
         toupperfinal=True
-    
     if config.checkistranslatable:
         segmentNOTAGS=replace_URLs(segment,config.code_URLs)
         segmentNOTAGS=replace_EMAILs(segment,config.code_EMAILs)
         tokens=tokenizationSL(segmentNOTAGS)
         if not is_translatable(tokens): 
             return(segment)
-        
     if totruecase:        
         segment=config.truecaser.truecase(segment)
-    if config.tokenize_SL:
+    if config.tokenizerSL:
         segment=config.tokenizerSL.tokenize(segment)
     if hastags:
         segmentTAGS=segment
@@ -270,7 +285,6 @@ def translate_segment(segment):
     else:
         segmentTAGS=segment
         segmentNOTAGS=segment
-    
     if len(segmentNOTAGS)<config.min_chars_segment:
         return(segment)
         
@@ -330,6 +344,8 @@ def translate_segment(segment):
                 translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].replace(t,equil[t],1)
             if not config.truecaser==None and is_first_letter_upper(segmentOrig):    
                 translation_candidates["translationTAGS"][i]=upper_case_first_letter(translation_candidates["translationTAGS"][i])
+        if totruecase:
+            translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].capitalize()
         if toupperfinal: 
             translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].upper()
             ###LOWERCASE UPPERCASED TAGS
@@ -355,10 +371,10 @@ def translate_segment(segment):
         if totruecase:
             translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i][0].upper()+translation_candidates["translationTAGS"][i][1:]
         #detokenize
-        if config.tokenizeSL and not config.tokenizerTL==None:
+        '''
+        if config.tokenizerSL and not config.tokenizerTL==None:
             translation_candidates["translationTAGS"][i]=config.tokenizerTL.detokenize(translation_candidates["translationTAGS"][i])
             
-        '''
         
                 
         translation_candidates["translationTAGS"][i]=config.tagrestorer.repairSpacesTags(translation_candidates["segmentOrig"],translation_candidates["translationTAGS"][i]) 

@@ -1,6 +1,6 @@
 #    MTUOC_preprocess
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 23/05/2023
+#    v. 07/06/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +21,7 @@ import regex as rx
 import re
 import html
 
+    
 def remove_control_characters(cadena):
     return rx.sub(r'\p{C}', '', cadena)
     
@@ -49,7 +50,7 @@ def preprocess_segment(segment):
     if config.unescape_html_input:
         segment=html.unescape(segment)
     segment=segment.replace(" <tag0>"," <tag0> ")
-    segment=segment.replace(" </tag0>"," <tag0> ")
+    segment=segment.replace(" </tag0>"," </tag0> ")
     segment=remove_control_characters(segment) 
     hastags=config.tagrestorer.has_tags(segment)
     originaltags=config.tagrestorer.get_tags(segment)
@@ -63,6 +64,7 @@ def preprocess_segment(segment):
         segment=replace_NUMs(segment)
     if config.pre_split_NUMs:
         segment=splitnumbers(segment)
+    
     if config.sentencepiece:
         try:
             segmentPre=" ".join(config.spSL.encode(segment))
@@ -79,12 +81,16 @@ def postprocess_segment(segmentPre):
     except:
             printLOG(1,"ERROR preprocess segment:",sys.exc_info())
     return(segmentPost)
-    
+
 def tokenizationSL(segment):
     if config.tokenize_SL and not config.tokenizerSL==None:
-        tokens=config.tokenizerSL.tokenize(segment)
+        if config.tokenizerSLType=="MTUOC":
+            tokens=config.tokenizerSL.tokenize(segment)
+        elif config.tokenizerSLType=="Moses":
+            tokens=" ".join(config.tokenizerSL(segment))        
     else:
         tokens=segment   
+
     return(tokens)
         
 def tokenizationTL(segment):

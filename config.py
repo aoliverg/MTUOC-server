@@ -24,6 +24,8 @@ tokenize_SL=False
 tokenize_TL=False
 tokenizerSL=None
 tokenizerTL=None
+tokenizerSLType=""
+tokenizerTLType=""
 
 tcmodel=""
 truecase=""
