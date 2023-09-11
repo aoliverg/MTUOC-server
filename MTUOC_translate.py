@@ -1,6 +1,6 @@
 #    MTUOC_translate
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 07/06/2023
+#    v. 11/09/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -255,6 +255,7 @@ def translate_segment(segment):
     totruecase=False
     toupperfinal=False
     if not config.truecase==None and config.truecase=="all": totruecase=True
+    print("***TOTRUECASE:",totruecase)
     segmentnotags=config.tagrestorer.remove_tags(segment)
     if not config.truecase==None and config.truecase in ["upper","all"] and segmentnotags.isupper() and not segment=="@URL@" and not segment=="@EMAIL@": 
         totruecase=True

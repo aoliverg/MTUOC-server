@@ -1,7 +1,7 @@
 #    MTUOC-server v 6
 #    Description: an MTUOC server using Sentence Piece as preprocessing step
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 07/06/2023
+#    v. 11/09/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -204,6 +204,16 @@ config.spmodelSL=configYAML["Preprocess"]["sp_model_SL"]
 config.spmodelTL=configYAML["Preprocess"]["sp_model_TL"]
 config.sp_splitter=configYAML["Preprocess"]["sp_splitter"]
 
+#BPE
+
+#BPE
+
+config.BPE=configYAML["Preprocess"]["BPE"]
+config.bpecodes=configYAML["Preprocess"]["bpecodes"]
+config.bpe_joiner=configYAML["Preprocess"]["bpe_joiner"]
+if config.BPE:
+    from subword_nmt import apply_bpe
+    config.bpeobject=apply_bpe.BPE(open(config.bpecodes,encoding="utf-8"))
 #bos and eos annotate
 config.bos_annotate=configYAML["Preprocess"]["bos_annotate"]
 config.bos_symbol=configYAML["Preprocess"]["bos_symbol"]
@@ -290,7 +300,6 @@ if config.MTUOCServer_type=="MTUOC":
     start_MTUOC_server()
 elif config.MTUOCServer_type=="Moses":
     start_Moses_server()
-    print("MOSES STARTED")
 elif config.MTUOCServer_type=="OpenNMT":
     start_OpenNMT_server()
 elif config.MTUOCServer_type=="NMTWizard":

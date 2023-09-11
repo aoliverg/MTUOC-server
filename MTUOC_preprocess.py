@@ -1,6 +1,6 @@
 #    MTUOC_preprocess
 #    Copyright (C) 2023  Antoni Oliver
-#    v. 07/06/2023
+#    v. 11/09/2023
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
@@ -44,6 +44,13 @@ def splitnumbers(segment,joiner=""):
         segment=segment.replace(xifra,xifra2)
     return(segment)
 
+def deprocessBPE(segment, joiner="@@"):
+    regex = r"(" + re.escape(joiner) + " )|("+ re.escape(joiner) +" ?$)"
+    segment=re.sub(regex, '', segment)
+    regex = r"( " + re.escape(joiner) + ")|(^ $"+ re.escape(joiner) +")"
+    segment=re.sub(regex, '', segment)
+    return(segment)
+
 def preprocess_segment(segment):
     if config.escape_html_input:
         segment=html.escape(segment)
@@ -64,10 +71,17 @@ def preprocess_segment(segment):
         segment=replace_NUMs(segment)
     if config.pre_split_NUMs:
         segment=splitnumbers(segment)
-    
+    print("***",config.sentencepiece,config.BPE)
     if config.sentencepiece:
         try:
             segmentPre=" ".join(config.spSL.encode(segment))
+        except:
+            printLOG(1,"ERROR preprocess segment:",sys.exc_info())
+    elif config.BPE:
+        print("Preprocess BPE")
+        try:
+            segmentPre=config.bpeobject.process_line(segment)
+            print("***SegmentPRE",segmentPre)
         except:
             printLOG(1,"ERROR preprocess segment:",sys.exc_info())
     else:
@@ -75,9 +89,13 @@ def preprocess_segment(segment):
     return(segmentPre)
     
 def postprocess_segment(segmentPre):
+    print("******POSTPROCESS",segmentPre)
     try:
         if config.sentencepiece:
             segmentPost=config.spTL.decode(segmentPre.split())
+        elif config.BPE:
+            print("POSTPROCESS BPE")
+            segmentPost=re.sub(r'(@@ )|(@@ ?$)', '', segmentPre)
     except:
             printLOG(1,"ERROR preprocess segment:",sys.exc_info())
     return(segmentPost)

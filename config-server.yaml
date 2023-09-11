@@ -2,13 +2,13 @@ MTEngine:
     MTengine: Marian
     #one of Marian, OpenNMT, Moses, GoogleTranslate, DeepL, Lucy
     startMTEngine: True
-    startCommand: "./marian-server-CPU -m model.bin -v vocab-en.yml vocab-es.yml -p 8050 --n-best  --alignment hard  --normalize 1 --quiet &"
+    startCommand: "./marian-server-CPU -m model.bin -v vocab-es.yml vocab-pt.yml -p 8261 --n-best  --alignment hard  --normalize 1 --quiet &"
     IP: localhost
-    port: 8050
+    port: 8261
     min_len_factor: 0.5
     
 MTUOCServer:
-  port: 8000
+  port: 8011
   type: MTUOC
   #one of MTUOC, Moses, ModernMT, OpenNMT, NMTWizard
   verbosity_level: 3
@@ -35,31 +35,37 @@ SRX_file: segment.srx
 
 
 Preprocess:
-  sl_lang: en
-  tl_lang: es
+  sl_lang: es
+  tl_lang: pt
   tokenize_SL: True
-  sl_tokenizer: MTUOC_tokenizer_eng.py
+  sl_tokenizer: MTUOC_tokenizer_spa.py
   #one of the MTUOC-tokenizers or state Moses if you use Moses tokenizers
-  tl_tokenizer: MTUOC_tokenizer_spa.py
+  tl_tokenizer: MTUOC_tokenizer_por.py
   #one of the MTUOC-tokenizers or state Moses if you use Moses tokenizers
   
   segment_input: True
   SRXfile: segmentSC.srx
-  SRXlang: English
+  SRXlang: Spanish
   
-  replaceNUMs: False
+  replaceNUMs: True
   code_NUMs: "@NUM@"
   splitNUMs: False
   #Truecasing
-  tcmodel: tc.en
+  tcmodel: tc.es
   #or None if not used
   truecase: all
   #one of None, all, upper
   ###SentencePiece###
-  sentencepiece: True
+  sentencepiece: False
   sp_model_SL: spmodel.model
   sp_model_TL: spmodel.model
   sp_splitter: "▁"
+  
+  #BPE
+  BPE: True
+  #True or False: if sentencepiece is set to True, sentencepiece will be used
+  bpecodes: codes_file
+  bpe_joiner: "@@"
   
   bos_annotate: True
   bos_symbol: <s>

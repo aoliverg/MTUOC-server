@@ -48,6 +48,13 @@ spmodelSL=""
 spmodelTL=""
 sp_splitter=""
 
+#BPE
+BPE=""
+bpecodes=""
+bpe_joiner=""
+bpeobject=None
+
+
 leading_spaces=0
 trailing_spaces=0
 
