@@ -1,0 +1,27 @@
+pip3 install websockets
+pip3 install lxml
+pip3 install regex
+pip3 install websocket
+pip3 install websocket-client
+pip3 install requests
+pip3 install flask
+pip3 install PyYAML
+pip3 install sentencepiece
+pip3 install waitress
+
+Per GoogleTranslate
+pip3 install google-cloud
+pip3 install google-cloud-vision
+pip3 install google-cloud-translate
+ip3 install google-api-python-client
+
+
+Per DeepL
+pip3 install deepl
+
+Per Lucy
+pip3 install xmltodict
+
+
+Per poder crear executables
+pip3 install pyinstaller

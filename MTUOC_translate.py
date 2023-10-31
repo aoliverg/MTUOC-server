@@ -1,20 +1,3 @@
-#    MTUOC_translate
-#    Copyright (C) 2023  Antoni Oliver
-#    v. 11/09/2023
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-
 import config
 import sys
 import re
@@ -24,9 +7,13 @@ import string as stringmodule
 import srx_segmenter
 
 from MTUOC_misc import printLOG
-from MTUOC_GoogleTranslate import Google_translate
-from MTUOC_DeepL import DeepL_translate
-from MTUOC_Lucy import Lucy_translate
+from MTUOC_misc import capitalizeMTUOC
+if config.MTUOCServer_MTengine=="GoogleTranslate":
+    from MTUOC_GoogleTranslate import Google_translate
+if config.MTUOCServer_MTengine=="DeepL":
+    from MTUOC_DeepL import DeepL_translate
+if config.MTUOCServer_MTengine=="Lucy":
+    from MTUOC_Lucy import Lucy_translate
 from MTUOC_Marian import translate_segment_Marian
 from MTUOC_Moses import translate_segment_Moses
 
@@ -255,7 +242,6 @@ def translate_segment(segment):
     totruecase=False
     toupperfinal=False
     if not config.truecase==None and config.truecase=="all": totruecase=True
-    print("***TOTRUECASE:",totruecase)
     segmentnotags=config.tagrestorer.remove_tags(segment)
     if not config.truecase==None and config.truecase in ["upper","all"] and segmentnotags.isupper() and not segment=="@URL@" and not segment=="@EMAIL@": 
         totruecase=True
@@ -326,13 +312,14 @@ def translate_segment(segment):
     translation_candidates["segmentPre"]=segmentPre
     translation_candidates["segmentPreTAGS"]=segmentPreTAGS
     translation_candidates["segmentNOTAGS"]=segmentNOTAGS
+    print("*****1",translation_candidates)
     if hastags:
         translation_candidates=restore_tags_translation_candidates(translation_candidates)  
         #(translation_candidates["segmentTAGS"],equil)=config.tagrestorer.replace_tags(translation_candidates["segmentOrig"])
-        
+     
     else:
         translation_candidates["translationTAGS"]=translation_candidates["translationNOTAGSPre"]
-       
+    print("*****2",translation_candidates)      
     for i in range(0,len(translation_candidates["translationNOTAGSPre"])):
         translation_candidates["translationTAGS"][i]=postprocess_segment(translation_candidates["translationTAGS"][i])
         
@@ -343,10 +330,11 @@ def translate_segment(segment):
                 translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i]+tagFinal
             for t in equil:
                 translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].replace(t,equil[t],1)
-            if not config.truecaser==None and is_first_letter_upper(segmentOrig):    
-                translation_candidates["translationTAGS"][i]=upper_case_first_letter(translation_candidates["translationTAGS"][i])
+            #if not config.truecaser==None and is_first_letter_upper(segmentOrig):    
+            #    translation_candidates["translationTAGS"][i]=upper_case_first_letter(translation_candidates["translationTAGS"][i])
+        print("*****3",translation_candidates)     
         if totruecase:
-            translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].capitalize()
+            translation_candidates["translationTAGS"][i]=capitalizeMTUOC(translation_candidates["translationTAGS"][i])
         if toupperfinal: 
             translation_candidates["translationTAGS"][i]=translation_candidates["translationTAGS"][i].upper()
             ###LOWERCASE UPPERCASED TAGS
@@ -381,6 +369,7 @@ def translate_segment(segment):
         translation_candidates["translationTAGS"][i]=config.tagrestorer.repairSpacesTags(translation_candidates["segmentOrig"],translation_candidates["translationTAGS"][i]) 
         printLOG(3,"SELECTED TRANSLATION REAL TAGS",translation_candidates["translationTAGS"][i])
     best_translation=select_best_candidate(translation_candidates,config.translation_selection_strategy)
+    
     translation=best_translation
     
     if not config.change_output_files[0]=="None":
@@ -412,6 +401,7 @@ def translate_segment(segment):
                 translation=re.sub(regexpTARGET, tochange, translation)
                 printLOG(3,tofindTARGET,tochange)
         printLOG(3,"CHANGED TARGET:",translation)
+    
     return(translation)
 
 def is_translatable_old(tokens):
